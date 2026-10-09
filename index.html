@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Квиз LumiTech: подберите подсветку, звёздное небо или шумоизоляцию для своего авто и получите скидку 1500 ₽.">
+<meta property="og:title" content="LumiTech — подбор тюнинга салона">
+<meta property="og:description" content="Ответьте на несколько вопросов, узнайте примерную стоимость и получите скидку 1500 ₽.">
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+<title>LumiTech — подбор тюнинга салона</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: ночной салон авто — звёздное небо на фоне, одна карточка квиза по центру, контурная "подсветка" по краю меняет цвет */
+:root{
+  --night:#0b0d1a;
+  --cabin:#141729;
+  --panel:#1b1f36;
+  --line:#2c3152;
+  --text:#eceefb;
+  --muted:#9ba0c4;
+  --glow:#6fd6ff;
+  --glow-soft:rgba(111,214,255,.2);
+  --gift:#ffcf6b;
+  --f-display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --f-body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--night);color:var(--text);font-family:var(--f-body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding-inline:16px;padding-block:28px 48px;display:flex;flex-direction:column;gap:28px}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-family:var(--f-display);font-weight:800;font-size:20px;letter-spacing:.02em}
+.logo span{color:var(--glow);text-shadow:0 0 14px var(--glow);transition:color .5s,text-shadow .5s}
+.badge{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--night);background:var(--gift);padding:6px 12px;border-radius:999px}
+
+.hero h1{font-family:var(--f-display);font-weight:700;font-size:clamp(26px,6vw,40px);line-height:1.15;margin:0 0 12px;text-wrap:balance}
+.hero h1 em{font-style:normal;color:var(--glow);text-shadow:0 0 22px var(--glow-soft);transition:color .5s}
+.hero p{margin:0;color:var(--muted);max-width:56ch}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chips span{font-size:13px;color:var(--text);border:1px solid var(--line);padding:5px 12px;border-radius:999px;background:rgba(20,23,41,.6)}
+
+.card{position:relative;background:linear-gradient(180deg,var(--panel),var(--cabin));border-radius:22px;padding:28px 24px;border:1px solid var(--line);box-shadow:0 0 36px -8px var(--glow-soft);transition:box-shadow .5s}
+@media (max-width:420px){.card{padding:24px 16px}}
+.card::before{content:"";position:absolute;left:24px;right:24px;top:-1px;height:2px;border-radius:2px;background:var(--glow);box-shadow:0 0 12px var(--glow),0 0 28px var(--glow);transition:background .5s,box-shadow .5s}
+
+.progress{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.bar{flex:1;height:6px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--glow);box-shadow:0 0 10px var(--glow);transition:width .4s ease,background .5s}
+.step{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.q h2{font-family:var(--f-display);font-weight:500;font-size:clamp(19px,4.2vw,24px);line-height:1.3;margin:0 0 6px;text-wrap:balance}
+.q .hint{color:var(--muted);font-size:14px;margin:0 0 18px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opts.three{grid-template-columns:repeat(3,1fr)}
+@media (max-width:560px){.opts,.opts.three{grid-template-columns:1fr}}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;width:100%;min-width:0;font:inherit;color:var(--text);background:rgba(11,13,26,.55);border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;transition:border-color .2s,background .2s,transform .15s}
+.opts.three .opt{flex-direction:column;align-items:flex-start}
+@media (max-width:560px){.opts.three .opt{flex-direction:row;align-items:center}}
+.opt:hover{border-color:var(--glow);background:rgba(11,13,26,.85)}
+.opt:active{transform:scale(.985)}
+.opt:focus-visible,.brand:focus-visible,.kit:focus-visible,.swatch:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
+.opt.sel,.brand.sel,.kit.sel{border-color:var(--glow);box-shadow:inset 0 0 0 1px var(--glow)}
+.opt .ic{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--cabin);border:1px solid var(--line)}
+.opt .ic svg{width:20px;height:20px;stroke:var(--glow);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .5s}
+.opt b{display:block;font-weight:600;font-size:15px}
+.opt small{display:block;color:var(--muted);font-size:13px;line-height:1.35}
+
+/* марки */
+.brands{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media (max-width:480px){.brands{grid-template-columns:repeat(2,1fr)}}
+.brand{font:inherit;font-weight:600;font-size:15px;color:var(--text);background:rgba(11,13,26,.55);border:1px solid var(--line);border-radius:12px;padding:12px 10px;cursor:pointer;min-width:0;overflow-wrap:anywhere;transition:border-color .2s,background .2s}
+.brand:hover{border-color:var(--glow);background:rgba(11,13,26,.85)}
+.brand.other{color:var(--muted);font-weight:500}
+
+/* комплекты подсветки */
+.kits{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.kits{grid-template-columns:1fr}}
+.kit{display:flex;flex-direction:column;gap:10px;text-align:left;font:inherit;color:var(--text);background:rgba(11,13,26,.55);border:1px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;min-width:0;transition:border-color .2s,background .2s}
+.kit:hover{border-color:var(--glow);background:rgba(11,13,26,.85)}
+.kit .tag{align-self:flex-start;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.kit.pro .tag{border-color:var(--gift);color:var(--gift)}
+.kit h3{font-family:var(--f-display);font-weight:700;font-size:19px;margin:0;line-height:1.2}
+.kit ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px;display:grid;gap:4px}
+.kit .price{margin-top:auto;font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
+.kit .price small{font-weight:500;color:var(--muted);font-size:13px}
+.kit .modes{display:flex;gap:5px;height:6px}
+.kit .modes i{flex:1;border-radius:3px}
+
+.try{margin-top:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.swatch{width:26px;height:26px;border-radius:50%;border:2px solid var(--cabin);cursor:pointer;padding:0;box-shadow:0 0 10px currentColor}
+
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:20px;min-height:24px;gap:12px}
+.back{font:inherit;font-size:14px;color:var(--muted);background:none;border:0;cursor:pointer;padding:4px 0}
+.back:hover{color:var(--text)}
+.back:focus-visible{outline:2px solid var(--glow);outline-offset:2px;border-radius:4px}
+
+/* результат */
+.res h2{font-family:var(--f-display);font-weight:700;font-size:clamp(22px,5vw,30px);line-height:1.2;margin:0 0 10px;text-wrap:balance}
+.res .lead{color:var(--muted);margin:0 0 18px}
+.est{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:22px}
+.row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:13px 16px;border-bottom:1px solid var(--line);background:rgba(11,13,26,.45)}
+.row > div{min-width:0}
+.row b{display:block;font-weight:600}
+.row span{color:var(--muted);font-size:13px}
+.row .sum{flex:none;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.row.minus .sum{color:var(--gift)}
+.row.total{background:rgba(11,13,26,.8);border-bottom:0}
+.row.total b{font-family:var(--f-display);font-size:16px}
+.row.total .sum{font-family:var(--f-display);font-size:clamp(17px,4.4vw,22px);color:var(--glow);text-shadow:0 0 16px var(--glow-soft)}
+.note{font-size:12px;color:var(--muted);padding:10px 16px;background:rgba(11,13,26,.8);border-top:1px dashed var(--line)}
+
+.ticket{border-radius:18px;padding:22px;background:linear-gradient(135deg,#2a2440,#1d1a30);border:1px dashed var(--gift);display:grid;gap:14px}
+.ticket .amt{font-family:var(--f-display);font-weight:800;font-size:clamp(34px,9vw,52px);line-height:1;color:var(--gift);text-shadow:0 0 26px rgba(255,207,107,.35)}
+.ticket .amt small{font-size:.42em;font-weight:500;color:var(--text);text-shadow:none;margin-left:6px}
+.code{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.code output{font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:.12em;padding:10px 16px;border-radius:10px;background:var(--night);border:1px solid var(--line);user-select:all}
+.ticket p{margin:0;font-size:14px;color:var(--muted)}
+
+.btn{font:inherit;font-weight:700;font-size:15px;border:0;border-radius:12px;padding:13px 20px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,filter .2s}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+.btn-glow{background:var(--glow);color:var(--night);box-shadow:0 0 22px -4px var(--glow)}
+.btn-glow:hover{filter:brightness(1.1)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn-ghost:hover{border-color:var(--glow)}
+.btn-gift{background:var(--gift);color:var(--night)}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.cta .btn{flex:1 1 200px}
+.msg{margin-top:22px;display:grid;gap:8px}
+.msg label{font-size:13px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.msg textarea{width:100%;min-height:150px;resize:vertical;font:inherit;font-size:14px;color:var(--text);background:var(--night);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.msg textarea:focus{outline:2px solid var(--glow);outline-offset:1px}
+.toast{font-size:13px;color:var(--glow);min-height:20px}
+.restart{margin-top:16px}
+
+footer{color:var(--muted);font-size:13px;text-align:center}
+footer a{color:var(--text)}
+
+.fade{animation:fade .35s ease}
+@keyframes fade{from{opacity:.25;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fade{animation:none}*{transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<div class="wrap">
+  <header>
+    <div class="logo">Lumi<span>Tech</span></div>
+    <div class="badge">−1500 ₽ после теста</div>
+  </header>
+
+  <section class="hero">
+    <h1>Каким будет <em>ваш салон</em> после LumiTech?</h1>
+    <p>Ответьте на несколько вопросов за минуту. Посчитаем примерную стоимость для вашей машины и дадим промокод на скидку 1500 ₽.</p>
+    <div class="chips"><span>Контурная подсветка</span><span>Звёздное небо</span><span>Шумо- и виброизоляция</span></div>
+  </section>
+
+  <main class="card" id="card" aria-live="polite"></main>
+
+  <footer>LumiTech · тюнинг салона авто · <a href="https://instagram.com/lumi_techh" target="_blank" rel="noopener">Instagram @lumi_techh</a> · <a href="https://vk.ru/ww_lumitech" target="_blank" rel="noopener">ВКонтакте</a></footer>
+</div>
+
+<script>
+/* ================================================================
+   НАСТРОЙКИ — здесь меняются ссылки, промокод, марки и цены
+   ================================================================ */
+const LINKS = {
+  instagram: "https://instagram.com/lumi_techh",
+  telegram: "",   // "https://t.me/ваш_ник" — пустые кнопки не показываются
+  vk: "https://vk.ru/ww_lumitech",
+  avito: ""
+};
+const PROMO = "LUMI1500";
+const DISCOUNT = 1500;
+
+/* Цены — ВРЕМЕННЫЕ, заменить на свои. База = седан/хэтчбек массовой марки. */
+const PRICES = {
+  light_autokomp: 12000,   // контурная подсветка, комплект АвтоКомпоненты
+  light_mtf:      24000,   // контурная подсветка, комплект MTF
+  sky:            30000,   // звёздное небо
+  quiet:          35000    // шумо- и виброизоляция (двери, пол, арки)
+};
+/* Сколько добавляет размер кузова */
+const BODY_K = { sedan:1, suv:1.2, van:1.35 };
+/* Классы марок: во сколько раз дороже работа (сложнее разбор салона) */
+const CLASS_K = { mass:1, mid:1.1, premium:1.35 };
+/* Марки и их класс — дополнить/исправить */
+const BRANDS = [
+  ["Lada","mass"],["Kia","mass"],["Hyundai","mass"],["Renault","mass"],
+  ["Toyota","mid"],["Volkswagen","mid"],["Skoda","mid"],["Nissan","mid"],["Mazda","mid"],
+  ["Haval","mid"],["Chery","mid"],["Geely","mid"],["Changan","mid"],
+  ["BMW","premium"],["Mercedes-Benz","premium"],["Audi","premium"],["Lexus","premium"],
+  ["Другая марка","mid"]
+];
+/* Разброс «от–до», в долях от расчётной цены */
+const SPREAD = 0.2;
+/* ================================================================ */
+
+const I = {
+  line:'<path d="M3 17c4-8 14-8 18 0"/><path d="M3 13c4-6 14-6 18 0" opacity=".5"/>',
+  star:'<path d="M12 3l2.2 5.6L20 9.3l-4.4 3.9 1.3 5.8L12 16l-4.9 3 1.3-5.8L4 9.3l5.8-.7z"/>',
+  mute:'<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l4 6M21 9l-4 6"/>',
+  all:'<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
+  car:'<path d="M4 15l1.5-5h13L20 15"/><rect x="3" y="15" width="18" height="4" rx="1.5"/><circle cx="7" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/>',
+  suv:'<path d="M3 15V9h12l4 4h2v2"/><rect x="3" y="15" width="18" height="3" rx="1.2"/><circle cx="7" cy="18.5" r="1.5"/><circle cx="17" cy="18.5" r="1.5"/>',
+  van:'<rect x="3" y="7" width="18" height="9" rx="2"/><path d="M3 11h18"/><circle cx="7" cy="17.5" r="1.5"/><circle cx="17" cy="17.5" r="1.5"/>',
+  road:'<path d="M8 21L10 3M16 21L14 3"/><path d="M12 6v2M12 11v2M12 16v2"/>',
+  moon:'<path d="M20 14A8 8 0 0110 4a8 8 0 1010 10z"/>',
+  rattle:'<path d="M4 12h3l2-5 3 10 2-5h6"/>',
+  note:'<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  home:'<path d="M3 11l9-7 9 7v9H3z"/><path d="M9 20v-6h6v6"/>',
+  pin:'<path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+  bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'
+};
+
+const BODY_NAME = { sedan:"седан / хэтчбек", suv:"кроссовер / внедорожник", van:"минивэн / универсал" };
+const KIT_NAME = { autokomp:"АвтоКомпоненты", mtf:"MTF" };
+const needsLight = () => ans.want==="light" || ans.want==="all";
+
+const Q = [
+  {key:"want", type:"opts", title:"Что хочется сделать с салоном?", hint:"Выберите главное, остальное обсудим при записи.",
+   opts:[
+    {v:"light", ic:"line", t:"Контурная подсветка", s:"Свет по панели, дверям и ногам"},
+    {v:"sky",   ic:"star", t:"Звёздное небо",      s:"Мерцающий потолок, как в премиум-авто"},
+    {v:"quiet", ic:"mute", t:"Шумоизоляция",       s:"Тише на трассе, без скрипов"},
+    {v:"all",   ic:"all",  t:"Хочу всё и сразу",   s:"Комплексное преображение"}
+   ]},
+  {key:"brand", type:"brands", title:"Какая марка у вашего автомобиля?", hint:"От марки зависит сложность разборки салона и цена."},
+  {key:"body", type:"opts", cls:"three", title:"Какой тип кузова?", hint:"Чем больше салон, тем больше материалов.",
+   opts:[
+    {v:"sedan", ic:"car", t:"Седан / хэтчбек", s:"Rio, Solaris, Vesta"},
+    {v:"suv",   ic:"suv", t:"Кроссовер / внедорожник", s:"Creta, Tiguan, Haval"},
+    {v:"van",   ic:"van", t:"Минивэн / универсал", s:"Большой салон"}
+   ]},
+  {key:"kit", type:"kits", show:needsLight, title:"Какую подсветку ставим?", hint:"Цена посчитана для вашей машины."},
+  {key:"pain", type:"opts", title:"Что сейчас больше всего не нравится в машине?", hint:"Это поможет подобрать решение.",
+   opts:[
+    {v:"noise",  ic:"road",   t:"Шумно в дороге", s:"Гул колёс и ветра"},
+    {v:"dull",   ic:"moon",   t:"Скучный салон вечером", s:"Темно и нет атмосферы"},
+    {v:"rattle", ic:"rattle", t:"Скрипы и дребезг", s:"Пластик и двери"},
+    {v:"music",  ic:"note",   t:"Музыка звучит плохо", s:"Двери гудят, басы теряются"}
+   ]},
+  {key:"place", type:"opts", title:"Где удобнее провести работы?", hint:"Можем у нас или у вас.",
+   opts:[
+    {v:"В вашем гараже", ic:"home", t:"У вас в гараже", s:"Пригоню машину сам"},
+    {v:"С выездом ко мне", ic:"pin", t:"Выезд ко мне", s:"Есть крытое место для работы"}
+   ]},
+  {key:"when", type:"opts", cls:"three", title:"Когда планируете?", hint:"Последний вопрос.",
+   opts:[
+    {v:"На этой неделе", ic:"bolt", t:"На этой неделе", s:"Хочу побыстрее"},
+    {v:"В течение месяца", ic:"cal", t:"В течение месяца", s:"Подберём дату"},
+    {v:"Пока присматриваюсь", ic:"eye", t:"Присматриваюсь", s:"Хочу узнать цену"}
+   ]}
+];
+
+const SERVICE = {
+  light:{t:"Контурная подсветка салона", s:"Торпедо, двери и зона ног, управление с телефона."},
+  sky:{t:"Звёздное небо в потолок", s:"Световые точки с мерцанием и регулировкой яркости."},
+  quiet:{t:"Шумо- и виброизоляция", s:"Двери, пол и арки: меньше гула, без дребезга."}
+};
+
+const ans = {};
+let history = [];
+let step = 0;
+const card = document.getElementById("card");
+const root = document.documentElement;
+
+/* ===== расчёт ===== */
+const brandClass = () => (BRANDS.find(b=>b[0]===ans.brand)||[,"mid"])[1];
+const k = () => (CLASS_K[brandClass()]||1) * (BODY_K[ans.body]||1);
+const round500 = n => Math.round(n/500)*500;
+const rub = n => n.toLocaleString("ru-RU").replace(/\s/g," ") + " ₽";
+function priceOf(key){ const p = round500(PRICES[key]*k()); return [p, round500(p*(1+SPREAD))]; }
+function lines(){
+  const list = ans.want==="all" ? ["light","sky","quiet"] : [ans.want];
+  return list.map(s=>{
+    const pk = s==="light" ? "light_"+(ans.kit||"autokomp") : s;
+    const [lo,hi] = priceOf(pk);
+    const name = s==="light" ? `${SERVICE.light.t} · ${KIT_NAME[ans.kit||"autokomp"]}` : SERVICE[s].t;
+    return {s, name, desc:SERVICE[s].s, lo, hi};
+  });
+}
+const extraTip = () => ({noise:"quiet",rattle:"quiet",music:"quiet",dull:"light"})[ans.pain];
+
+/* ===== цвет подсветки страницы ===== */
+let rgbTimer=null, hue=195;
+function setGlow(c){
+  clearInterval(rgbTimer); rgbTimer=null;
+  if(c==="rgb"){
+    rgbTimer=setInterval(()=>{hue=(hue+2)%360; apply(`hsl(${hue} 95% 68%)`,`hsl(${hue} 95% 68% / .2)`);},60);
+    return;
+  }
+  const n=parseInt(c.slice(1),16);
+  apply(c,`rgba(${n>>16},${(n>>8)&255},${n&255},.2)`);
+}
+function apply(c,soft){ root.style.setProperty("--glow",c); root.style.setProperty("--glow-soft",soft); if(window.sky) sky.tint=c; }
+
+/* ===== навигация ===== */
+const visible = () => Q.filter(q=>!q.show||q.show());
+function go(next){ history.push(step); step=next; render(); }
+function nextIndex(from){ for(let i=from+1;i<Q.length;i++){ if(!Q[i].show||Q[i].show()) return i; } return Q.length; }
+function choose(val){
+  ans[Q[step].key]=val;
+  setTimeout(()=>go(nextIndex(step)),220);
+}
+function render(){ step<Q.length ? renderQ() : renderResult(); window.scrollTo({top:card.offsetTop-20,behavior:"smooth"}); }
+
+function icon(n){return `<span class="ic"><svg viewBox="0 0 24 24">${I[n]}</svg></span>`}
+
+function renderQ(){
+  const q = Q[step];
+  const vis = visible(); const pos = vis.indexOf(q)+1;
+  let body = "";
+  if(q.type==="opts"){
+    body = `<div class="opts ${q.cls||""}">${q.opts.map((o,i)=>`
+      <button class="opt${ans[q.key]===o.v?' sel':''}" id="opt-${q.key}-${i}" data-v="${o.v}">
+        ${icon(o.ic)}<span><b>${o.t}</b><small>${o.s}</small></span>
+      </button>`).join("")}</div>`;
+  } else if(q.type==="brands"){
+    body = `<div class="brands">${BRANDS.map(([n],i)=>`
+      <button class="brand${n==="Другая марка"?" other":""}${ans.brand===n?" sel":""}" id="brand-${i}" data-v="${n}">${n}</button>`).join("")}</div>`;
+  } else if(q.type==="kits"){
+    const [a1,a2]=priceOf("light_autokomp"), [m1,m2]=priceOf("light_mtf");
+    body = `<div class="kits">
+      <button class="kit${ans.kit==="autokomp"?" sel":""}" id="kit-autokomp" data-v="autokomp">
+        <span class="tag">Оптимально</span>
+        <h3>АвтоКомпоненты</h3>
+        <div class="modes"><i style="background:#ff4d6d"></i><i style="background:#4dff88"></i><i style="background:#4d9dff"></i><i style="background:#ffd24d"></i><i style="background:#c04dff"></i></div>
+        <ul><li>Простая RGB-подсветка</li><li>Несколько цветов и режимов</li><li>Хороший старт за разумные деньги</li></ul>
+        <div class="price">${rub(a1)} – ${rub(a2)}</div>
+      </button>
+      <button class="kit pro${ans.kit==="mtf"?" sel":""}" id="kit-mtf" data-v="mtf">
+        <span class="tag">Премиум</span>
+        <h3>MTF</h3>
+        <div class="modes" style="background:linear-gradient(90deg,#ff4d6d,#ffb35c,#ffd24d,#7dff9b,#4dd9ff,#4d7dff,#a24dff,#ff4dd2);border-radius:3px"></div>
+        <ul><li>Больше цветов и режимов</li><li>Ровный, яркий свет</li><li>Выше качество и надёжность</li></ul>
+        <div class="price">${rub(m1)} – ${rub(m2)}</div>
+      </button>
+    </div>
+    <div class="try">Примерьте цвет:
+      ${[["#6fd6ff","Голубой"],["#b28cff","Фиолетовый"],["#ffb35c","Янтарь"],["#ff5c8a","Красный"],["#7dff9b","Зелёный"]].map(([c,n])=>`<button class="swatch" aria-label="${n}" style="background:${c};color:${c}" data-c="${c}"></button>`).join("")}
+      <button class="swatch" aria-label="RGB" style="background:conic-gradient(#ff5c8a,#ffb35c,#7dff9b,#6fd6ff,#b28cff,#ff5c8a);color:#b28cff" data-c="rgb"></button>
+    </div>`;
+  }
+  card.innerHTML = `
+    <div class="progress"><div class="bar"><i style="width:${(pos-1)/vis.length*100}%"></i></div><span class="step">${pos} из ${vis.length}</span></div>
+    <div class="q fade"><h2>${q.title}</h2><p class="hint">${q.hint}</p>${body}</div>
+    <div class="nav">${history.length?'<button class="back" id="back">← Назад</button>':'<span></span>'}<span class="step">Скидка ждёт в конце</span></div>`;
+  requestAnimationFrame(()=>{ const b=card.querySelector(".bar i"); if(b) b.style.width=((pos-.5)/vis.length*100)+"%"; });
+
+  card.querySelectorAll(".opt,.brand,.kit").forEach(b=>b.addEventListener("click",()=>{
+    card.querySelectorAll(".sel").forEach(x=>x.classList.remove("sel")); b.classList.add("sel");
+    choose(b.dataset.v);
+  }));
+  card.querySelectorAll(".swatch").forEach(s=>s.addEventListener("click",()=>setGlow(s.dataset.c)));
+  const back=document.getElementById("back");
+  if(back) back.onclick=()=>{ step=history.pop(); render(); };
+}
+
+function renderResult(){
+  const L = lines();
+  const lo = L.reduce((a,l)=>a+l.lo,0), hi = L.reduce((a,l)=>a+l.hi,0);
+  const tip = extraTip();
+  const showTip = tip && !L.some(l=>l.s===tip);
+  const car = `${ans.brand}, ${BODY_NAME[ans.body]}`;
+  const title = ans.want==="all" ? "Комплексное преображение салона" : SERVICE[ans.want].t;
+
+  const message =
+`Здравствуйте! Прошёл квиз LumiTech.
+Авто: ${car}.
+Интересует: ${L.map(l=>l.name).join("; ")}.
+Примерная стоимость по квизу: ${rub(lo-DISCOUNT)} – ${rub(hi-DISCOUNT)} с учётом скидки.
+Где: ${ans.place.toLowerCase()}. Когда: ${ans.when.toLowerCase()}.
+Промокод: ${PROMO}`;
+
+  const btns = [
+    LINKS.telegram && `<a class="btn btn-glow" href="${LINKS.telegram}" target="_blank" rel="noopener">Записаться в Telegram</a>`,
+    LINKS.instagram && `<a class="btn ${LINKS.telegram?'btn-ghost':'btn-glow'}" href="${LINKS.instagram}" target="_blank" rel="noopener">Записаться в Instagram</a>`,
+    LINKS.vk && `<a class="btn btn-ghost" href="${LINKS.vk}" target="_blank" rel="noopener">Записаться во ВКонтакте</a>`,
+    LINKS.avito && `<a class="btn btn-ghost" href="${LINKS.avito}" target="_blank" rel="noopener">Мы на Авито</a>`
+  ].filter(Boolean).join("");
+
+  card.innerHTML = `
+    <div class="progress"><div class="bar"><i style="width:100%"></i></div><span class="step">Готово</span></div>
+    <div class="res fade">
+      <h2>${title}</h2>
+      <p class="lead">Примерный расчёт для ${car}:</p>
+
+      <div class="est">
+        ${L.map(l=>`<div class="row"><div><b>${l.name}</b><span>${l.desc}</span></div><div class="sum">${rub(l.lo)} – ${rub(l.hi)}</div></div>`).join("")}
+        <div class="row minus"><div><b>Скидка за квиз</b><span>по промокоду ${PROMO}</span></div><div class="sum">−${rub(DISCOUNT)}</div></div>
+        <div class="row total"><div><b>Итого примерно</b></div><div class="sum">${rub(lo-DISCOUNT)} – ${rub(hi-DISCOUNT)}</div></div>
+        <div class="note">Точную цену назовём после осмотра машины: она зависит от модели, года и комплектации.</div>
+      </div>
+      ${showTip?`<p class="lead">Ещё вы отметили «${Q[4].opts.find(o=>o.v===ans.pain).t.toLowerCase()}». С этим поможет <b style="color:var(--text)">${SERVICE[tip].t.toLowerCase()}</b>, можно добавить при записи.</p>`:""}
+
+      <div class="ticket">
+        <div class="amt">−${DISCOUNT} ₽<small>на любую услугу</small></div>
+        <div class="code"><output id="promo">${PROMO}</output><button class="btn btn-gift" id="copyCode">Скопировать код</button></div>
+        <p>Назовите промокод при записи, и мы вычтем 1500 ₽ из стоимости работы.</p>
+      </div>
+
+      <div class="msg">
+        <label for="msgText">Готовое сообщение для записи</label>
+        <textarea id="msgText" readonly>${message}</textarea>
+        <div class="cta" style="margin-top:4px"><button class="btn btn-ghost" id="copyMsg">Скопировать сообщение</button></div>
+        <div class="toast" id="toast"></div>
+      </div>
+
+      <div class="cta">${btns}</div>
+      <button class="back restart" id="restart">↺ Пройти заново</button>
+    </div>`;
+
+  const toast=document.getElementById("toast");
+  function copy(text, el, okText){
+    const fallback=()=>{ if(el.select){el.select();} else { const r=document.createRange(); r.selectNodeContents(el); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} toast.textContent="Текст выделен, скопируйте его вручную"; };
+    try{ navigator.clipboard.writeText(text).then(()=>{toast.textContent=okText;},fallback); }catch(e){ fallback(); }
+  }
+  document.getElementById("copyCode").onclick=()=>copy(PROMO,document.getElementById("promo"),"Промокод скопирован");
+  document.getElementById("copyMsg").onclick=()=>copy(message,document.getElementById("msgText"),"Сообщение скопировано, отправьте его нам");
+  document.getElementById("restart").onclick=()=>{ for(const k in ans) delete ans[k]; history=[]; step=0; render(); };
+}
+
+/* ===== звёздное небо ===== */
+window.sky = (()=>{
+  const c=document.getElementById("sky"), x=c.getContext("2d");
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let w,h,stars=[];
+  const o={tint:"#6fd6ff"};
+  function size(){ const d=Math.min(devicePixelRatio||1,2); w=c.width=innerWidth*d; h=c.height=innerHeight*d;
+    const n=Math.round(innerWidth*innerHeight/5200);
+    stars=Array.from({length:n},()=>({x:Math.random()*w,y:Math.random()*h,r:(Math.random()*1.3+.3)*d,p:Math.random()*6.28,s:.5+Math.random()*1.6,t:Math.random()<.18})); }
+  function draw(time){
+    x.clearRect(0,0,w,h);
+    for(const s of stars){
+      x.globalAlpha = reduce?.7:.35+.65*(0.5+0.5*Math.sin(time/1000*s.s+s.p));
+      x.fillStyle = s.t?o.tint:"#ffffff";
+      x.beginPath(); x.arc(s.x,s.y,s.r,0,6.28); x.fill();
+    }
+    x.globalAlpha=1;
+    if(!reduce) requestAnimationFrame(draw);
+  }
+  size(); addEventListener("resize",size); requestAnimationFrame(draw);
+  return o;
+})();
+
+renderQ();
+</script>
+</body>
+</html>
