@@ -102,6 +102,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .refin{width:100%;font:inherit;font-size:17px;color:var(--text);background:rgba(11,13,26,.55);border:1px solid var(--line);border-radius:12px;padding:14px 16px;outline:none}
 .refin:focus{border-color:var(--glow);box-shadow:inset 0 0 0 1px var(--glow)}
 .refself{display:block;margin:12px auto 0}
+.refin.bad{border-color:#ff6b81;box-shadow:inset 0 0 0 1px #ff6b81}
+.referr{color:#ff8fa0;font-size:14px;margin-top:8px;min-height:0}
+.referr:empty{display:none}
 .znext:disabled{opacity:.4;cursor:default}
 .kit .modes{display:flex;gap:5px;height:6px}
 .kit .modes i{flex:1;border-radius:3px}
@@ -178,7 +181,7 @@ footer a{color:var(--text)}
 
   <main class="card" id="card" aria-live="polite"></main>
 
-  <footer>LumiTech · тюнинг салона авто · <a href="https://instagram.com/lumi_techh" target="_blank" rel="noopener">Instagram @lumi_techh</a> · <a href="https://vk.ru/ww_lumitech" target="_blank" rel="noopener">ВКонтакте</a> · <a href="https://t.me/ww_lumitech" target="_blank" rel="noopener">Telegram</a></footer>
+  <footer>LumiTech · тюнинг салона авто · <a href="https://instagram.com/lumi_techh" target="_blank" rel="noopener">Instagram @lumi_techh</a> · <a href="https://vk.ru/ww_lumitech" target="_blank" rel="noopener">ВКонтакте</a> · <a href="https://t.me/lumitechh" target="_blank" rel="noopener">Telegram @lumitechh</a></footer>
 </div>
 
 <script>
@@ -187,7 +190,7 @@ footer a{color:var(--text)}
    ================================================================ */
 const LINKS = {
   instagram: "https://instagram.com/lumi_techh",
-  telegram: "https://t.me/ww_lumitech",   // пустые кнопки не показываются
+  telegram: "https://t.me/lumitechh",   // аккаунт поддержки   // пустые кнопки не показываются
   vk: "https://vk.ru/ww_lumitech",
   avito: ""
 };
@@ -198,6 +201,7 @@ const REFERRALS = {
   "Никита": "СВЕТ"
 };
 const norm = t => (t||"").trim().toLowerCase().replace(/ё/g,"е");
+const knownRef = t => Object.keys(REFERRALS).some(n=>norm(n)===norm(t));
 const promo = () => { const k = Object.keys(REFERRALS).find(n=>norm(n)===norm(ans.ref)); return k ? REFERRALS[k] : PROMO; };
 /* Скидка по итоговой сумме: [от суммы, скидка]. Ниже первой ступени скидки нет. */
 const DISCOUNTS = [[12000,1500],[22000,2000],[30000,3000],[40000,4000]];
@@ -415,6 +419,7 @@ function renderQ(){
       <button class="brand${n==="Другая марка"?" other":""}${ans.brand===n?" sel":""}" id="brand-${i}" data-v="${n}">${n}</button>`).join("")}</div>`;
   } else if(q.type==="ref"){
     body = `<input class="refin" id="refin" type="text" autocomplete="off" maxlength="40" placeholder="Например, Андрей" value="${(ans.ref||"").replace(/"/g,"&quot;")}">
+      <div class="referr" id="referr" role="alert"></div>
       <button class="btn btn-glow znext" id="refnext"${ans.ref?"":" disabled"}>Дальше</button>
       <button class="back refself" id="refself">Никто, нашёл сам</button>`;
   } else if(q.type==="zones"){
@@ -470,9 +475,15 @@ function renderQ(){
   const ri=document.getElementById("refin");
   if(ri){
     const rn=document.getElementById("refnext");
-    ri.addEventListener("input",()=>{ ans.ref=ri.value.trim(); rn.disabled=!ans.ref; });
-    ri.addEventListener("keydown",e=>{ if(e.key==="Enter" && ans.ref) go(nextIndex(step)); });
-    rn.onclick=()=>go(nextIndex(step));
+    const er=document.getElementById("referr");
+    const submit=()=>{
+      if(!ans.ref) return;
+      if(!knownRef(ans.ref)){ er.textContent="Такого имени нет в списке. Проверьте, как оно написано, или нажмите «Никто, нашёл сам»."; ri.classList.add("bad"); ri.focus(); return; }
+      go(nextIndex(step));
+    };
+    ri.addEventListener("input",()=>{ ans.ref=ri.value.trim(); rn.disabled=!ans.ref; er.textContent=""; ri.classList.remove("bad"); });
+    ri.addEventListener("keydown",e=>{ if(e.key==="Enter") submit(); });
+    rn.onclick=submit;
     document.getElementById("refself").onclick=()=>{ ans.ref=""; go(nextIndex(step)); };
   }
   card.querySelectorAll(".swatch").forEach(s=>s.addEventListener("click",()=>setGlow(s.dataset.c)));
@@ -504,7 +515,7 @@ ${hasMain?`Примерная стоимость по квизу: ${range([lo-di
 ${ans.ref?`Посоветовал(а): ${ans.ref}.\n`:""}Промокод: ${code}`;
 
   const btns = [
-    LINKS.telegram && `<a class="btn btn-glow" href="${LINKS.telegram}" target="_blank" rel="noopener">Записаться в Telegram</a>`,
+    LINKS.telegram && `<a class="btn btn-glow" href="${LINKS.telegram}" target="_blank" rel="noopener">Написать в Telegram</a>`,
     LINKS.instagram && `<a class="btn ${LINKS.telegram?'btn-ghost':'btn-glow'}" href="${LINKS.instagram}" target="_blank" rel="noopener">Записаться в Instagram</a>`,
     LINKS.vk && `<a class="btn btn-ghost" href="${LINKS.vk}" target="_blank" rel="noopener">Записаться во ВКонтакте</a>`,
     LINKS.avito && `<a class="btn btn-ghost" href="${LINKS.avito}" target="_blank" rel="noopener">Мы на Авито</a>`
