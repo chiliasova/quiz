@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Квиз LumiTech: подберите подсветку, звёздное небо или шумоизоляцию для своего авто и получите скидку 1500 ₽.">
+<meta name="description" content="Квиз LumiTech: подберите подсветку, звёздное небо или шумоизоляцию для своего авто и получите скидку до 4000 ₽.">
 <meta property="og:title" content="LumiTech — подбор тюнинга салона">
-<meta property="og:description" content="Ответьте на несколько вопросов, узнайте примерную стоимость и получите скидку 1500 ₽.">
+<meta property="og:description" content="Ответьте на несколько вопросов, узнайте примерную стоимость и получите скидку до 4000 ₽.">
 <style>[hidden]{display:none!important}img{max-width:100%}</style>
 <title>LumiTech — подбор тюнинга салона</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -88,6 +88,21 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .kit ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px;display:grid;gap:4px}
 .kit .price{margin-top:auto;font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
 .kit .price small{font-weight:500;color:var(--muted);font-size:13px}
+.zones{display:grid;gap:8px}
+.zone{display:flex;align-items:center;gap:12px;background:rgba(11,13,26,.55);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .2s}
+.zone:hover{border-color:var(--glow)}
+.zone:has(input:checked){border-color:var(--glow);box-shadow:inset 0 0 0 1px var(--glow)}
+.zone.full{margin-bottom:6px}
+.zone input{width:18px;height:18px;accent-color:var(--glow);flex:none;margin:0}
+.zone .zt{flex:1;min-width:0}
+.zone .zt b{display:block;font-weight:600}
+.zone .zt small{color:var(--muted);font-size:13px}
+.zone .zp{flex:none;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.znext{margin-top:14px;width:100%}
+.refin{width:100%;font:inherit;font-size:17px;color:var(--text);background:rgba(11,13,26,.55);border:1px solid var(--line);border-radius:12px;padding:14px 16px;outline:none}
+.refin:focus{border-color:var(--glow);box-shadow:inset 0 0 0 1px var(--glow)}
+.refself{display:block;margin:12px auto 0}
+.znext:disabled{opacity:.4;cursor:default}
 .kit .modes{display:flex;gap:5px;height:6px}
 .kit .modes i{flex:1;border-radius:3px}
 
@@ -152,18 +167,18 @@ footer a{color:var(--text)}
 <div class="wrap">
   <header>
     <div class="logo">Lumi<span>Tech</span></div>
-    <div class="badge">−1500 ₽ после теста</div>
+    <div class="badge">Скидка до 4000 ₽</div>
   </header>
 
   <section class="hero">
     <h1>Каким будет <em>ваш салон</em> после LumiTech?</h1>
-    <p>Ответьте на несколько вопросов за минуту. Посчитаем примерную стоимость для вашей машины и дадим промокод на скидку 1500 ₽.</p>
+    <p>Ответьте на несколько вопросов за минуту. Посчитаем примерную стоимость для вашей машины и дадим промокод на скидку до 4000 ₽.</p>
     <div class="chips"><span>Контурная подсветка</span><span>Звёздное небо</span><span>Шумо- и виброизоляция</span></div>
   </section>
 
   <main class="card" id="card" aria-live="polite"></main>
 
-  <footer>LumiTech · тюнинг салона авто · <a href="https://instagram.com/lumi_techh" target="_blank" rel="noopener">Instagram @lumi_techh</a> · <a href="https://vk.ru/ww_lumitech" target="_blank" rel="noopener">ВКонтакте</a></footer>
+  <footer>LumiTech · тюнинг салона авто · <a href="https://instagram.com/lumi_techh" target="_blank" rel="noopener">Instagram @lumi_techh</a> · <a href="https://vk.ru/ww_lumitech" target="_blank" rel="noopener">ВКонтакте</a> · <a href="https://t.me/ww_lumitech" target="_blank" rel="noopener">Telegram</a></footer>
 </div>
 
 <script>
@@ -172,34 +187,71 @@ footer a{color:var(--text)}
    ================================================================ */
 const LINKS = {
   instagram: "https://instagram.com/lumi_techh",
-  telegram: "",   // "https://t.me/ваш_ник" — пустые кнопки не показываются
+  telegram: "https://t.me/ww_lumitech",   // пустые кнопки не показываются
   vk: "https://vk.ru/ww_lumitech",
   avito: ""
 };
-const PROMO = "LUMI1500";
-const DISCOUNT = 1500;
-
-/* Цены — ВРЕМЕННЫЕ, заменить на свои. База = седан/хэтчбек массовой марки. */
-const PRICES = {
-  light_autokomp: 12000,   // контурная подсветка, комплект АвтоКомпоненты
-  light_mtf:      24000,   // контурная подсветка, комплект MTF
-  sky:            30000,   // звёздное небо
-  quiet:          35000    // шумо- и виброизоляция (двери, пол, арки)
+const PROMO = "LUMITECH";   // промокод, если имя не из списка или клиент пришёл сам
+/* Кто посоветовал → свой промокод. Имя пишется как угодно: регистр и ё/е не важны. */
+const REFERRALS = {
+  "Андрей": "НЕБО",
+  "Никита": "СВЕТ"
 };
-/* Сколько добавляет размер кузова */
-const BODY_K = { sedan:1, suv:1.2, van:1.35 };
-/* Классы марок: во сколько раз дороже работа (сложнее разбор салона) */
-const CLASS_K = { mass:1, mid:1.1, premium:1.35 };
-/* Марки и их класс — дополнить/исправить */
-const BRANDS = [
-  ["Lada","mass"],["Kia","mass"],["Hyundai","mass"],["Renault","mass"],
-  ["Toyota","mid"],["Volkswagen","mid"],["Skoda","mid"],["Nissan","mid"],["Mazda","mid"],
-  ["Haval","mid"],["Chery","mid"],["Geely","mid"],["Changan","mid"],
-  ["BMW","premium"],["Mercedes-Benz","premium"],["Audi","premium"],["Lexus","premium"],
-  ["Другая марка","mid"]
+const norm = t => (t||"").trim().toLowerCase().replace(/ё/g,"е");
+const promo = () => { const k = Object.keys(REFERRALS).find(n=>norm(n)===norm(ans.ref)); return k ? REFERRALS[k] : PROMO; };
+/* Скидка по итоговой сумме: [от суммы, скидка]. Ниже первой ступени скидки нет. */
+const DISCOUNTS = [[12000,1500],[22000,2000],[30000,3000],[40000,4000]];
+const DISCOUNT_FROM = DISCOUNTS[0][0];
+const discountFor = sum => DISCOUNTS.reduce((d,[from,v])=>sum>=from?v:d, 0);
+const tiersText = () => DISCOUNTS.map(([f,v])=>`от ${rub(f)} — ${rub(v)}`).join(", ");
+
+/* ---------- КОНТУРНАЯ ПОДСВЕТКА ----------
+   Полный комплект (двери, торпедо, подсветка в ноги), АвтоКомпоненты.
+   Для больших и тяжёлых машин полный комплект — цена индивидуально. */
+const LIGHT = {
+  1: [15000, 18000],   // 1 класс: японские, корейские, китайские и подобные
+  2: [16000, 20000]    // 2 класс: немецкие и АвтоВАЗ
+};
+const MTF_ADD = [5000, 9000];   // доплата за MTF к полному комплекту
+
+/* Подсветка по отдельным зонам: [от, до].
+   normal — несложные машины, heavy — большие и тяжёлые.
+   Двери — цена за одну дверь (у купе 2 двери, у остальных 4). */
+const ZONES = {
+  doors:   {t:"Двери",            normal:{door:[1500,1500], coupe:[2500,2500]}, heavy:{door:[2000,2000], coupe:[3000,3000]}},
+  torpedo: {t:"Торпедо",          normal:[2000,2000], heavy:[2500,3000]},
+  feet:    {t:"Подсветка в ноги", normal:[2000,2000], heavy:[2500,3000], s:"Все 4 места"},
+  handles: {t:"Ручки дверей",     normal:[1500,1500], heavy:[1500,1500], s:"Комплект на 4 двери"},
+  pockets: {t:"Карманы дверей",   normal:[1500,1500], heavy:[1500,1500], s:"Комплект на 4 двери"}
+};
+
+/* ---------- ЗВЁЗДНОЕ НЕБО ----------
+   Работа по типу кузова, null = обсуждается отдельно. Комплект считается отдельно. */
+const SKY = {
+  sedan:[15000,25000], hatch:[15000,30000], coupe:[15000,25000],
+  cross:[25000,40000], jeep:[25000,40000], van:null
+};
+
+/* ---------- ШУМО- И ВИБРОИЗОЛЯЦИЯ ---------- считается индивидуально */
+
+/* ---------- ВЫЕЗД ---------- от Бора, null = обсуждаем */
+const TRAVEL = [
+  ["Бор и до 25 км", 2000],
+  ["До 50 км от Бора", 3000],
+  ["До 100 км от Бора", 5000],
+  ["Дальше 100 км", null]
 ];
-/* Разброс «от–до», в долях от расчётной цены */
-const SPREAD = 0.2;
+
+/* Марки и их класс (1 или 2) — дополнить/исправить */
+const BRANDS = [
+  ["Lada",2],["Kia",1],["Hyundai",1],
+  ["Toyota",1],["Nissan",1],["Mazda",1],
+  ["Subaru",1],["Lexus",1],["Renault",1],
+  ["Haval",1],["Chery",1],["Geely",1],
+  ["Changan",1],["Omoda",1],["Volkswagen",2],
+  ["Skoda",2],["BMW",2],["Mercedes-Benz",2],
+  ["Audi",2],["Porsche",2],["Другая марка",2]
+];
 /* ================================================================ */
 
 const I = {
@@ -221,11 +273,14 @@ const I = {
   eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'
 };
 
-const BODY_NAME = { sedan:"седан / хэтчбек", suv:"кроссовер / внедорожник", van:"минивэн / универсал" };
+const BODY_NAME = { sedan:"седан", hatch:"хэтчбек", coupe:"купе", cross:"кроссовер / универсал", jeep:"большой внедорожник", van:"минивэн / фургон" };
+const HEAVY = ["jeep","van"];   // большие и тяжёлые машины
 const KIT_NAME = { autokomp:"АвтоКомпоненты", mtf:"MTF" };
 const needsLight = () => ans.want==="light" || ans.want==="all";
+const isTravel = () => ans.place==="С выездом ко мне";
 
 const Q = [
+  {key:"ref", type:"ref", title:"Кто вам посоветовал LumiTech?", hint:"Напишите имя человека, от которого вы о нас узнали. От этого зависит ваш промокод."},
   {key:"want", type:"opts", title:"Что хочется сделать с салоном?", hint:"Выберите главное, остальное обсудим при записи.",
    opts:[
     {v:"light", ic:"line", t:"Контурная подсветка", s:"Свет по панели, дверям и ногам"},
@@ -234,12 +289,16 @@ const Q = [
     {v:"all",   ic:"all",  t:"Хочу всё и сразу",   s:"Комплексное преображение"}
    ]},
   {key:"brand", type:"brands", title:"Какая марка у вашего автомобиля?", hint:"От марки зависит сложность разборки салона и цена."},
-  {key:"body", type:"opts", cls:"three", title:"Какой тип кузова?", hint:"Чем больше салон, тем больше материалов.",
+  {key:"body", type:"opts", cls:"three", title:"Какой тип кузова?", hint:"От размера салона зависит объём работы.",
    opts:[
-    {v:"sedan", ic:"car", t:"Седан / хэтчбек", s:"Rio, Solaris, Vesta"},
-    {v:"suv",   ic:"suv", t:"Кроссовер / внедорожник", s:"Creta, Tiguan, Haval"},
-    {v:"van",   ic:"van", t:"Минивэн / универсал", s:"Большой салон"}
+    {v:"sedan", ic:"car", t:"Седан", s:"Rio, Solaris, Vesta"},
+    {v:"hatch", ic:"car", t:"Хэтчбек", s:"Polo, Granta, i30"},
+    {v:"coupe", ic:"car", t:"Купе", s:"Две двери"},
+    {v:"cross", ic:"suv", t:"Кроссовер / универсал", s:"Creta, Tiguan, Forester"},
+    {v:"jeep",  ic:"suv", t:"Большой внедорожник", s:"Land Cruiser, X5, Tank"},
+    {v:"van",   ic:"van", t:"Минивэн / фургон", s:"Carnival, Transporter"}
    ]},
+  {key:"zones", type:"zones", show:needsLight, title:"Что подсвечиваем?", hint:"Полный комплект или отдельные зоны, можно выбрать несколько."},
   {key:"kit", type:"kits", show:needsLight, title:"Какую подсветку ставим?", hint:"Цена посчитана для вашей машины."},
   {key:"pain", type:"opts", title:"Что сейчас больше всего не нравится в машине?", hint:"Это поможет подобрать решение.",
    opts:[
@@ -248,11 +307,13 @@ const Q = [
     {v:"rattle", ic:"rattle", t:"Скрипы и дребезг", s:"Пластик и двери"},
     {v:"music",  ic:"note",   t:"Музыка звучит плохо", s:"Двери гудят, басы теряются"}
    ]},
-  {key:"place", type:"opts", title:"Где удобнее провести работы?", hint:"Можем у нас или у вас.",
+  {key:"place", type:"opts", title:"Где удобнее провести работы?", hint:"Можем у нас или приехать к вам.",
    opts:[
     {v:"В вашем гараже", ic:"home", t:"У вас в гараже", s:"Пригоню машину сам"},
-    {v:"С выездом ко мне", ic:"pin", t:"Выезд ко мне", s:"Есть крытое место для работы"}
+    {v:"С выездом ко мне", ic:"pin", t:"Выезд ко мне", s:"Есть крытое место, выезд оплачивается"}
    ]},
+  {key:"dist", type:"opts", show:isTravel, title:"Как далеко от Бора ехать?", hint:"Стоимость выезда зависит от расстояния.",
+   opts:TRAVEL.map(([t,p])=>({v:t, ic:"pin", t, s:p?`Выезд ${p.toLocaleString("ru-RU")} ₽`:"Цену обсудим"}))},
   {key:"when", type:"opts", cls:"three", title:"Когда планируете?", hint:"Последний вопрос.",
    opts:[
     {v:"На этой неделе", ic:"bolt", t:"На этой неделе", s:"Хочу побыстрее"},
@@ -274,19 +335,44 @@ const card = document.getElementById("card");
 const root = document.documentElement;
 
 /* ===== расчёт ===== */
-const brandClass = () => (BRANDS.find(b=>b[0]===ans.brand)||[,"mid"])[1];
-const k = () => (CLASS_K[brandClass()]||1) * (BODY_K[ans.body]||1);
-const round500 = n => Math.round(n/500)*500;
+const brandClass = () => (BRANDS.find(b=>b[0]===ans.brand)||[,2])[1];
+const heavy = () => HEAVY.includes(ans.body);
 const rub = n => n.toLocaleString("ru-RU").replace(/\s/g," ") + " ₽";
-function priceOf(key){ const p = round500(PRICES[key]*k()); return [p, round500(p*(1+SPREAD))]; }
+const range = p => p ? (p[0]===p[1] ? rub(p[0]) : `${rub(p[0])} – ${rub(p[1])}`) : "индивидуально";
+const add = (a,b) => [a[0]+b[0], a[1]+b[1]];
+function zonePrice(z){
+  const Z = ZONES[z][heavy()?"heavy":"normal"];
+  if(z!=="doors") return Z;
+  const coupe = ans.body==="coupe", per = coupe ? Z.coupe : Z.door, n = coupe ? 2 : 4;
+  return [per[0]*n, per[1]*n];
+}
+const zoneLabel = z => z==="doors" ? `Двери (${ans.body==="coupe"?2:4} шт.)` : ZONES[z].t;
+const isFull = () => !ans.zones || ans.zones.includes("full");
+/* цена подсветки АвтоКомпоненты или MTF; open — что уточняется отдельно */
+function lightPrice(kit){
+  if(isFull()){
+    if(heavy()) return {p:null, open:"подсветка", desc:"Полный комплект для больших машин считаем индивидуально."};
+    const base = LIGHT[brandClass()]||LIGHT[2];
+    return {p: kit==="mtf" ? add(base,MTF_ADD) : base, desc:"Полный комплект: двери, торпедо, подсветка в ноги."};
+  }
+  const p = ans.zones.map(zonePrice).reduce(add,[0,0]);
+  const desc = ans.zones.map(zoneLabel).join(", ") + ".";
+  return kit==="mtf" ? {p, open:"доплата за MTF", desc: desc+" Доплату за комплект MTF уточним."} : {p, desc};
+}
 function lines(){
   const list = ans.want==="all" ? ["light","sky","quiet"] : [ans.want];
-  return list.map(s=>{
-    const pk = s==="light" ? "light_"+(ans.kit||"autokomp") : s;
-    const [lo,hi] = priceOf(pk);
-    const name = s==="light" ? `${SERVICE.light.t} · ${KIT_NAME[ans.kit||"autokomp"]}` : SERVICE[s].t;
-    return {s, name, desc:SERVICE[s].s, lo, hi};
+  const L = list.map(s=>{
+    if(s==="light"){ const kit=ans.kit||"autokomp"; return {s, name:`${SERVICE.light.t} · ${KIT_NAME[kit]}`, ...lightPrice(kit)}; }
+    if(s==="sky"){ const p=SKY[ans.body];
+      return p ? {s, name:SERVICE.sky.t, p, open:"комплект неба", desc:"Цена работы. Комплект неба считается отдельно: цена зависит от выбранного комплекта."}
+               : {s, name:SERVICE.sky.t, p:null, open:"звёздное небо", desc:"Для минивэнов и фургонов цену обсуждаем отдельно."}; }
+    return {s, name:SERVICE.quiet.t, p:null, open:"шумоизоляция", desc:"Цена зависит от материала, количества слоёв и зон обработки, посчитаем индивидуально."};
   });
+  if(isTravel()){
+    const t = TRAVEL.find(x=>x[0]===ans.dist)||[ans.dist,null];
+    L.push({s:"travel", fee:true, name:"Выезд мастера", desc:t[0], p:t[1]?[t[1],t[1]]:null, open:t[1]?null:"выезд"});
+  }
+  return L;
 }
 const extraTip = () => ({noise:"quiet",rattle:"quiet",music:"quiet",dull:"light"})[ans.pain];
 
@@ -327,22 +413,35 @@ function renderQ(){
   } else if(q.type==="brands"){
     body = `<div class="brands">${BRANDS.map(([n],i)=>`
       <button class="brand${n==="Другая марка"?" other":""}${ans.brand===n?" sel":""}" id="brand-${i}" data-v="${n}">${n}</button>`).join("")}</div>`;
+  } else if(q.type==="ref"){
+    body = `<input class="refin" id="refin" type="text" autocomplete="off" maxlength="40" placeholder="Например, Андрей" value="${(ans.ref||"").replace(/"/g,"&quot;")}">
+      <button class="btn btn-glow znext" id="refnext"${ans.ref?"":" disabled"}>Дальше</button>
+      <button class="back refself" id="refself">Никто, нашёл сам</button>`;
+  } else if(q.type==="zones"){
+    const sel = ans.zones||[];
+    const full = heavy() ? "индивидуально" : range(LIGHT[brandClass()]||LIGHT[2]);
+    const items = [["full","Полный комплект","Двери, торпедо, подсветка в ноги",full],
+      ...Object.keys(ZONES).map(z=>[z, zoneLabel(z), ZONES[z].s||(z==="doors"?"Цена за все двери":""), range(zonePrice(z))])];
+    body = `<div class="zones">${items.map(([v,t,sub,p])=>`
+      <label class="zone${v==="full"?" full":""}"><input type="checkbox" value="${v}"${sel.includes(v)?" checked":""}>
+        <span class="zt"><b>${t}</b>${sub?`<small>${sub}</small>`:""}</span><span class="zp">${p}</span></label>`).join("")}</div>
+      <button class="btn btn-glow znext" id="znext"${sel.length?"":" disabled"}>Дальше</button>`;
   } else if(q.type==="kits"){
-    const [a1,a2]=priceOf("light_autokomp"), [m1,m2]=priceOf("light_mtf");
+    const pa=lightPrice("autokomp").p, pm=lightPrice("mtf").p, partial=!isFull();
     body = `<div class="kits">
       <button class="kit${ans.kit==="autokomp"?" sel":""}" id="kit-autokomp" data-v="autokomp">
         <span class="tag">Оптимально</span>
         <h3>АвтоКомпоненты</h3>
         <div class="modes"><i style="background:#ff4d6d"></i><i style="background:#4dff88"></i><i style="background:#4d9dff"></i><i style="background:#ffd24d"></i><i style="background:#c04dff"></i></div>
         <ul><li>Простая RGB-подсветка</li><li>Несколько цветов и режимов</li><li>Хороший старт за разумные деньги</li></ul>
-        <div class="price">${rub(a1)} – ${rub(a2)}</div>
+        <div class="price">${pa?range(pa):"Цена индивидуально"}</div>
       </button>
       <button class="kit pro${ans.kit==="mtf"?" sel":""}" id="kit-mtf" data-v="mtf">
         <span class="tag">Премиум</span>
         <h3>MTF</h3>
         <div class="modes" style="background:linear-gradient(90deg,#ff4d6d,#ffb35c,#ffd24d,#7dff9b,#4dd9ff,#4d7dff,#a24dff,#ff4dd2);border-radius:3px"></div>
         <ul><li>Больше цветов и режимов</li><li>Ровный, яркий свет</li><li>Выше качество и надёжность</li></ul>
-        <div class="price">${rub(m1)} – ${rub(m2)}</div>
+        <div class="price">${pm?(partial?`${range(pm)} <small>+ доплата за MTF</small>`:range(pm)):"Цена индивидуально"}</div>
       </button>
     </div>
     <div class="try">Примерьте цвет:
@@ -360,6 +459,22 @@ function renderQ(){
     card.querySelectorAll(".sel").forEach(x=>x.classList.remove("sel")); b.classList.add("sel");
     choose(b.dataset.v);
   }));
+  const boxes = card.querySelectorAll(".zone input");
+  boxes.forEach(b=>b.addEventListener("change",()=>{
+    if(b.checked) boxes.forEach(o=>{ if(o!==b && (b.value==="full"||o.value==="full")) o.checked=false; });
+    ans.zones=[...boxes].filter(x=>x.checked).map(x=>x.value);
+    document.getElementById("znext").disabled=!ans.zones.length;
+  }));
+  const zn=document.getElementById("znext");
+  if(zn) zn.onclick=()=>go(nextIndex(step));
+  const ri=document.getElementById("refin");
+  if(ri){
+    const rn=document.getElementById("refnext");
+    ri.addEventListener("input",()=>{ ans.ref=ri.value.trim(); rn.disabled=!ans.ref; });
+    ri.addEventListener("keydown",e=>{ if(e.key==="Enter" && ans.ref) go(nextIndex(step)); });
+    rn.onclick=()=>go(nextIndex(step));
+    document.getElementById("refself").onclick=()=>{ ans.ref=""; go(nextIndex(step)); };
+  }
   card.querySelectorAll(".swatch").forEach(s=>s.addEventListener("click",()=>setGlow(s.dataset.c)));
   const back=document.getElementById("back");
   if(back) back.onclick=()=>{ step=history.pop(); render(); };
@@ -367,7 +482,14 @@ function renderQ(){
 
 function renderResult(){
   const L = lines();
-  const lo = L.reduce((a,l)=>a+l.lo,0), hi = L.reduce((a,l)=>a+l.hi,0);
+  const code = promo();
+  const priced = L.filter(l=>l.p);
+  const lo = priced.reduce((a,l)=>a+l.p[0],0), hi = priced.reduce((a,l)=>a+l.p[1],0);
+  const hasMain = priced.some(l=>!l.fee);
+  const open = L.map(l=>l.open).filter(Boolean);
+  const disc = hasMain ? discountFor(lo) : 0;
+  const totalText = hasMain ? range([lo-disc, hi-disc]) : "после осмотра";
+  const openText = open.length ? `${hasMain?"+ ":""}${open.join(", ")}: уточним при записи` : "";
   const tip = extraTip();
   const showTip = tip && !L.some(l=>l.s===tip);
   const car = `${ans.brand}, ${BODY_NAME[ans.body]}`;
@@ -376,10 +498,10 @@ function renderResult(){
   const message =
 `Здравствуйте! Прошёл квиз LumiTech.
 Авто: ${car}.
-Интересует: ${L.map(l=>l.name).join("; ")}.
-Примерная стоимость по квизу: ${rub(lo-DISCOUNT)} – ${rub(hi-DISCOUNT)} с учётом скидки.
-Где: ${ans.place.toLowerCase()}. Когда: ${ans.when.toLowerCase()}.
-Промокод: ${PROMO}`;
+Интересует: ${L.filter(l=>!l.fee).map(l=>l.s==="light"&&!isFull()?`${l.name} (${ans.zones.map(zoneLabel).join(", ").toLowerCase()})`:l.name).join("; ")}.
+${hasMain?`Примерная стоимость по квизу: ${range([lo-disc, hi-disc])}${disc?" с учётом скидки":""}${open.length?" (уточнить: "+open.join(", ")+")":""}.`:"Стоимость: хочу узнать индивидуальную цену."}
+Где: ${ans.place.toLowerCase()}${isTravel()&&ans.dist?" ("+ans.dist+")":""}. Когда: ${ans.when.toLowerCase()}.
+${ans.ref?`Посоветовал(а): ${ans.ref}.\n`:""}Промокод: ${code}`;
 
   const btns = [
     LINKS.telegram && `<a class="btn btn-glow" href="${LINKS.telegram}" target="_blank" rel="noopener">Записаться в Telegram</a>`,
@@ -395,22 +517,22 @@ function renderResult(){
       <p class="lead">Примерный расчёт для ${car}:</p>
 
       <div class="est">
-        ${L.map(l=>`<div class="row"><div><b>${l.name}</b><span>${l.desc}</span></div><div class="sum">${rub(l.lo)} – ${rub(l.hi)}</div></div>`).join("")}
-        <div class="row minus"><div><b>Скидка за квиз</b><span>по промокоду ${PROMO}</span></div><div class="sum">−${rub(DISCOUNT)}</div></div>
-        <div class="row total"><div><b>Итого примерно</b></div><div class="sum">${rub(lo-DISCOUNT)} – ${rub(hi-DISCOUNT)}</div></div>
-        <div class="note">Точную цену назовём после осмотра машины: она зависит от модели, года и комплектации.</div>
+        ${L.map(l=>`<div class="row"><div><b>${l.name}</b><span>${l.desc}</span></div><div class="sum">${l.p?range(l.p):(l.fee?"обсудим":"индивидуально")}</div></div>`).join("")}
+        <div class="row minus"><div><b>Скидка за квиз</b><span>${disc?`по промокоду ${code}`:`действует при заказе от ${rub(DISCOUNT_FROM)}`}</span></div><div class="sum">${disc?"−"+rub(disc):"—"}</div></div>
+        <div class="row total"><div><b>Итого примерно</b>${openText?`<span>${openText}</span>`:""}</div><div class="sum">${totalText}</div></div>
+        <div class="note">Точную цену назовём после осмотра машины: она зависит от модели, года и комплектации. Подсветку можно поставить и по отдельным зонам.</div>
       </div>
-      ${showTip?`<p class="lead">Ещё вы отметили «${Q[4].opts.find(o=>o.v===ans.pain).t.toLowerCase()}». С этим поможет <b style="color:var(--text)">${SERVICE[tip].t.toLowerCase()}</b>, можно добавить при записи.</p>`:""}
+      ${showTip?`<p class="lead">Ещё вы отметили «${Q.find(q=>q.key==="pain").opts.find(o=>o.v===ans.pain).t.toLowerCase()}». С этим поможет <b style="color:var(--text)">${SERVICE[tip].t.toLowerCase()}</b>, можно добавить при записи.</p>`:""}
 
       <div class="ticket">
-        <div class="amt">−${DISCOUNT} ₽<small>на любую услугу</small></div>
-        <div class="code"><output id="promo">${PROMO}</output><button class="btn btn-gift" id="copyCode">Скопировать код</button></div>
-        <p>Назовите промокод при записи, и мы вычтем 1500 ₽ из стоимости работы.</p>
+        <div class="amt">${disc?`−${rub(disc)}<small>на ваш заказ</small>`:`до −${rub(DISCOUNTS[DISCOUNTS.length-1][1])}<small>чем больше заказ, тем больше скидка</small>`}</div>
+        <div class="code"><output id="promo">${code}</output><button class="btn btn-gift" id="copyCode">Скопировать код</button></div>
+        <p>Назовите промокод при записи, и мы сделаем скидку по итоговой сумме: ${tiersText()}.</p>
       </div>
 
       <div class="msg">
         <label for="msgText">Готовое сообщение для записи</label>
-        <textarea id="msgText" readonly>${message}</textarea>
+        <textarea id="msgText" readonly>${message.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</textarea>
         <div class="cta" style="margin-top:4px"><button class="btn btn-ghost" id="copyMsg">Скопировать сообщение</button></div>
         <div class="toast" id="toast"></div>
       </div>
@@ -424,7 +546,7 @@ function renderResult(){
     const fallback=()=>{ if(el.select){el.select();} else { const r=document.createRange(); r.selectNodeContents(el); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} toast.textContent="Текст выделен, скопируйте его вручную"; };
     try{ navigator.clipboard.writeText(text).then(()=>{toast.textContent=okText;},fallback); }catch(e){ fallback(); }
   }
-  document.getElementById("copyCode").onclick=()=>copy(PROMO,document.getElementById("promo"),"Промокод скопирован");
+  document.getElementById("copyCode").onclick=()=>copy(code,document.getElementById("promo"),"Промокод скопирован");
   document.getElementById("copyMsg").onclick=()=>copy(message,document.getElementById("msgText"),"Сообщение скопировано, отправьте его нам");
   document.getElementById("restart").onclick=()=>{ for(const k in ans) delete ans[k]; history=[]; step=0; render(); };
 }
