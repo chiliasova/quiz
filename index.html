@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Квиз LumiTech: подберите подсветку, звёздное небо или шумоизоляцию для своего авто и получите скидку до 4000 ₽.">
+<meta name="description" content="Квиз LumiTech: подберите подсветку салона, внешнюю подсветку низа машины, звёздное небо или магнитолу Teyes для своего авто и получите скидку до 4000 ₽.">
 <meta property="og:title" content="LumiTech — подбор тюнинга салона">
 <meta property="og:description" content="Ответьте на несколько вопросов, узнайте примерную стоимость и получите скидку до 4000 ₽.">
 <style>[hidden]{display:none!important}img{max-width:100%}</style>
@@ -95,6 +95,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .zone.full{margin-bottom:6px}
 .zone input{width:18px;height:18px;accent-color:var(--glow);flex:none;margin:0}
 .zone .zt{flex:1;min-width:0}
+.zone .ic{flex:none}
 .zone .zt b{display:block;font-weight:600}
 .zone .zt small{color:var(--muted);font-size:13px}
 .zone .zp{flex:none;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -176,7 +177,7 @@ footer a{color:var(--text)}
   <section class="hero">
     <h1>Каким будет <em>ваш салон</em> после LumiTech?</h1>
     <p>Ответьте на несколько вопросов за минуту. Посчитаем примерную стоимость для вашей машины и дадим промокод на скидку до 4000 ₽.</p>
-    <div class="chips"><span>Контурная подсветка</span><span>Звёздное небо</span><span>Шумо- и виброизоляция</span></div>
+    <div class="chips"><span>Подсветка салона</span><span>Звёздное небо</span><span>Внешняя подсветка низа машины</span><span>Магнитолы Teyes</span></div>
   </section>
 
   <main class="card" id="card" aria-live="polite"></main>
@@ -210,23 +211,25 @@ const discountFor = sum => DISCOUNTS.reduce((d,[from,v])=>sum>=from?v:d, 0);
 const tiersText = () => DISCOUNTS.map(([f,v])=>`от ${rub(f)} — ${rub(v)}`).join(", ");
 
 /* ---------- КОНТУРНАЯ ПОДСВЕТКА ----------
-   Полный комплект (двери, торпедо, подсветка в ноги), АвтоКомпоненты.
+   Комплекс (двери, ноги, карманы дверей, торпеда), АвтоКомпоненты.
    Для больших и тяжёлых машин полный комплект — цена индивидуально. */
 const LIGHT = {
   1: [15000, 18000],   // 1 класс: японские, корейские, китайские и подобные
-  2: [16000, 20000]    // 2 класс: немецкие и АвтоВАЗ
+  2: [16000, 19000]    // 2 класс: немецкие и АвтоВАЗ
 };
-const MTF_ADD = [5000, 9000];   // доплата за MTF к полному комплекту
+const MTF_ADD = [5500, 5500];   // доплата за MTF к комплексу = разница комплектов (9500 − 4000)
+/* Стоимость комплекта подсветки — добавляется к цене работы по отдельным зонам */
+const KIT_COST = { autokomp: 4000, mtf: 9500 };
 
 /* Подсветка по отдельным зонам: [от, до].
    normal — несложные машины, heavy — большие и тяжёлые.
    Двери — цена за одну дверь (у купе 2 двери, у остальных 4). */
 const ZONES = {
-  doors:   {t:"Двери",            normal:{door:[1500,1500], coupe:[2500,2500]}, heavy:{door:[2000,2000], coupe:[3000,3000]}},
-  torpedo: {t:"Торпедо",          normal:[2000,2000], heavy:[2500,3000]},
-  feet:    {t:"Подсветка в ноги", normal:[2000,2000], heavy:[2500,3000], s:"Все 4 места"},
-  handles: {t:"Ручки дверей",     normal:[1500,1500], heavy:[1500,1500], s:"Комплект на 4 двери"},
-  pockets: {t:"Карманы дверей",   normal:[1500,1500], heavy:[1500,1500], s:"Комплект на 4 двери"}
+  doors:   {t:"Двери",            normal:{door:[2000,2000], coupe:[3000,3000]}, heavy:{door:[2500,2500], coupe:[3500,3500]}},
+  torpedo: {t:"Торпеда",          normal:[2500,2500], heavy:[3000,3500]},
+  feet:    {t:"Подсветка в ноги", normal:[2500,2500], heavy:[3000,3500], s:"Все 4 места"},
+  handles: {t:"Ручки дверей",     normal:[2000,2000], heavy:[2000,2000], s:"Комплект на 4 двери"},
+  pockets: {t:"Карманы дверей",   normal:[2000,2000], heavy:[2000,2000], s:"Комплект на 4 двери"}
 };
 
 /* ---------- ЗВЁЗДНОЕ НЕБО ----------
@@ -236,7 +239,14 @@ const SKY = {
   cross:[25000,40000], jeep:[25000,40000], van:null
 };
 
-/* ---------- ШУМО- И ВИБРОИЗОЛЯЦИЯ ---------- считается индивидуально */
+/* ---------- ВНЕШНЯЯ ПОДСВЕТКА НИЗА МАШИНЫ ---------- */
+const UNDER = [
+  ["2 ленты по бокам", 7500],
+  ["4 ленты по контуру", 12000]
+];
+
+/* ---------- АНДРОИД-МАГНИТОЛА TEYES ---------- цена вместе с магнитолой и установкой */
+const TEYES = 5000;
 
 /* ---------- ВЫЕЗД ---------- от Бора, null = обсуждаем */
 const TRAVEL = [
@@ -280,17 +290,19 @@ const I = {
 const BODY_NAME = { sedan:"седан", hatch:"хэтчбек", coupe:"купе", cross:"кроссовер / универсал", jeep:"большой внедорожник", van:"минивэн / фургон" };
 const HEAVY = ["jeep","van"];   // большие и тяжёлые машины
 const KIT_NAME = { autokomp:"АвтоКомпоненты", mtf:"MTF" };
-const needsLight = () => ans.want==="light" || ans.want==="all";
+const wants = v => (ans.want||[]).includes(v);
+const needsLight = () => wants("light") || wants("complex");
 const isTravel = () => ans.place==="С выездом ко мне";
 
 const Q = [
   {key:"ref", type:"ref", title:"Кто вам посоветовал LumiTech?", hint:"Напишите имя человека, от которого вы о нас узнали. От этого зависит ваш промокод."},
-  {key:"want", type:"opts", title:"Что хочется сделать с салоном?", hint:"Выберите главное, остальное обсудим при записи.",
+  {key:"want", type:"multi", title:"Что хочется сделать?", hint:"Можно выбрать несколько вариантов.",
    opts:[
-    {v:"light", ic:"line", t:"Контурная подсветка", s:"Свет по панели, дверям и ногам"},
-    {v:"sky",   ic:"star", t:"Звёздное небо",      s:"Мерцающий потолок, как в премиум-авто"},
-    {v:"quiet", ic:"mute", t:"Шумоизоляция",       s:"Тише на трассе, без скрипов"},
-    {v:"all",   ic:"all",  t:"Хочу всё и сразу",   s:"Комплексное преображение"}
+    {v:"light",   ic:"line", t:"Контурная подсветка", s:"Сами выбираете: подсветка дверей, ног, карманов дверей, торпеды"},
+    {v:"complex", ic:"all",  t:"Комплекс", s:"Подсветка всего салона: двери, ноги, карманы дверей и торпеда"},
+    {v:"sky",     ic:"star", t:"Звёздное небо", s:"Мерцающий потолок, как в премиум-авто"},
+    {v:"under",   ic:"car",  t:"Внешняя подсветка низа машины", s:"Светодиодные ленты под машиной"},
+    {v:"teyes",   ic:"note", t:"Андроид-магнитола Teyes", s:"Магнитола вместе с установкой"}
    ]},
   {key:"brand", type:"brands", title:"Какая марка у вашего автомобиля?", hint:"От марки зависит сложность разборки салона и цена."},
   {key:"body", type:"opts", cls:"three", title:"Какой тип кузова?", hint:"От размера салона зависит объём работы.",
@@ -302,15 +314,10 @@ const Q = [
     {v:"jeep",  ic:"suv", t:"Большой внедорожник", s:"Land Cruiser, X5, Tank"},
     {v:"van",   ic:"van", t:"Минивэн / фургон", s:"Carnival, Transporter"}
    ]},
-  {key:"zones", type:"zones", show:needsLight, title:"Что подсвечиваем?", hint:"Полный комплект или отдельные зоны, можно выбрать несколько."},
+  {key:"zones", type:"zones", show:()=>wants("light"), title:"Что подсвечиваем?", hint:"Выберите зоны, можно несколько. Здесь цена работы, комплект подсветки добавится на следующем шаге."},
   {key:"kit", type:"kits", show:needsLight, title:"Какую подсветку ставим?", hint:"Цена посчитана для вашей машины."},
-  {key:"pain", type:"opts", title:"Что сейчас больше всего не нравится в машине?", hint:"Это поможет подобрать решение.",
-   opts:[
-    {v:"noise",  ic:"road",   t:"Шумно в дороге", s:"Гул колёс и ветра"},
-    {v:"dull",   ic:"moon",   t:"Скучный салон вечером", s:"Темно и нет атмосферы"},
-    {v:"rattle", ic:"rattle", t:"Скрипы и дребезг", s:"Пластик и двери"},
-    {v:"music",  ic:"note",   t:"Музыка звучит плохо", s:"Двери гудят, басы теряются"}
-   ]},
+  {key:"under", type:"opts", show:()=>wants("under"), title:"Какую подсветку низа машины ставим?", hint:"Цена за работу и ленты.",
+   opts:UNDER.map(([t,p])=>({v:t, ic:"car", t, s:`${p.toLocaleString("ru-RU")} ₽`}))},
   {key:"place", type:"opts", title:"Где удобнее провести работы?", hint:"Можем у нас или приехать к вам.",
    opts:[
     {v:"В вашем гараже", ic:"home", t:"У вас в гараже", s:"Пригоню машину сам"},
@@ -327,9 +334,11 @@ const Q = [
 ];
 
 const SERVICE = {
-  light:{t:"Контурная подсветка салона", s:"Торпедо, двери и зона ног, управление с телефона."},
+  light:{t:"Контурная подсветка салона"},
+  complex:{t:"Комплексная подсветка салона"},
   sky:{t:"Звёздное небо в потолок", s:"Световые точки с мерцанием и регулировкой яркости."},
-  quiet:{t:"Шумо- и виброизоляция", s:"Двери, пол и арки: меньше гула, без дребезга."}
+  under:{t:"Внешняя подсветка низа машины"},
+  teyes:{t:"Андроид-магнитола Teyes", s:"Магнитола вместе с установкой."}
 };
 
 const ans = {};
@@ -351,26 +360,28 @@ function zonePrice(z){
   return [per[0]*n, per[1]*n];
 }
 const zoneLabel = z => z==="doors" ? `Двери (${ans.body==="coupe"?2:4} шт.)` : ZONES[z].t;
-const isFull = () => !ans.zones || ans.zones.includes("full");
+const isFull = () => wants("complex");
 /* цена подсветки АвтоКомпоненты или MTF; open — что уточняется отдельно */
 function lightPrice(kit){
   if(isFull()){
-    if(heavy()) return {p:null, open:"подсветка", desc:"Полный комплект для больших машин считаем индивидуально."};
+    if(heavy()) return {p:null, open:"подсветка", desc:"Комплекс для больших машин считаем индивидуально."};
     const base = LIGHT[brandClass()]||LIGHT[2];
-    return {p: kit==="mtf" ? add(base,MTF_ADD) : base, desc:"Полный комплект: двери, торпедо, подсветка в ноги."};
+    return {p: kit==="mtf" ? add(base,MTF_ADD) : base, desc:"Подсветка всего салона: двери, ноги, карманы дверей и торпеда."};
   }
-  const p = ans.zones.map(zonePrice).reduce(add,[0,0]);
-  const desc = ans.zones.map(zoneLabel).join(", ") + ".";
-  return kit==="mtf" ? {p, open:"доплата за MTF", desc: desc+" Доплату за комплект MTF уточним."} : {p, desc};
+  const work = ans.zones.map(zonePrice).reduce(add,[0,0]);
+  const p = add(work,[KIT_COST[kit],KIT_COST[kit]]);
+  const desc = ans.zones.map(zoneLabel).join(", ") + `. Работа ${range(work)} + комплект ${KIT_NAME[kit]} ${rub(KIT_COST[kit])}.`;
+  return {p, desc};
 }
 function lines(){
-  const list = ans.want==="all" ? ["light","sky","quiet"] : [ans.want];
+  const list = Q.find(q=>q.key==="want").opts.map(o=>o.v).filter(wants);
   const L = list.map(s=>{
-    if(s==="light"){ const kit=ans.kit||"autokomp"; return {s, name:`${SERVICE.light.t} · ${KIT_NAME[kit]}`, ...lightPrice(kit)}; }
+    if(s==="light"||s==="complex"){ const kit=ans.kit||"autokomp"; return {s, name:`${SERVICE[s].t} · ${KIT_NAME[kit]}`, ...lightPrice(kit)}; }
+    if(s==="under"){ const u=UNDER.find(x=>x[0]===ans.under)||UNDER[0]; return {s, name:SERVICE.under.t, desc:u[0]+".", p:[u[1],u[1]]}; }
+    if(s==="teyes") return {s, name:SERVICE.teyes.t, desc:SERVICE.teyes.s, p:[TEYES,TEYES]};
     if(s==="sky"){ const p=SKY[ans.body];
       return p ? {s, name:SERVICE.sky.t, p, open:"комплект неба", desc:"Цена работы. Комплект неба считается отдельно: цена зависит от выбранного комплекта."}
                : {s, name:SERVICE.sky.t, p:null, open:"звёздное небо", desc:"Для минивэнов и фургонов цену обсуждаем отдельно."}; }
-    return {s, name:SERVICE.quiet.t, p:null, open:"шумоизоляция", desc:"Цена зависит от материала, количества слоёв и зон обработки, посчитаем индивидуально."};
   });
   if(isTravel()){
     const t = TRAVEL.find(x=>x[0]===ans.dist)||[ans.dist,null];
@@ -378,7 +389,6 @@ function lines(){
   }
   return L;
 }
-const extraTip = () => ({noise:"quiet",rattle:"quiet",music:"quiet",dull:"light"})[ans.pain];
 
 /* ===== цвет подсветки страницы ===== */
 let rgbTimer=null, hue=195;
@@ -422,17 +432,21 @@ function renderQ(){
       <div class="referr" id="referr" role="alert"></div>
       <button class="btn btn-glow znext" id="refnext"${ans.ref?"":" disabled"}>Дальше</button>
       <button class="back refself" id="refself">Никто, нашёл сам</button>`;
+  } else if(q.type==="multi"){
+    const sel = ans.want||[];
+    body = `<div class="zones">${q.opts.map(o=>`
+      <label class="zone"><input type="checkbox" class="wantbox" value="${o.v}"${sel.includes(o.v)?" checked":""}>
+        <span class="zt"><b>${o.t}</b><small>${o.s}</small></span></label>`).join("")}</div>
+      <button class="btn btn-glow znext" id="wnext"${sel.length?"":" disabled"}>Дальше</button>`;
   } else if(q.type==="zones"){
     const sel = ans.zones||[];
-    const full = heavy() ? "индивидуально" : range(LIGHT[brandClass()]||LIGHT[2]);
-    const items = [["full","Полный комплект","Двери, торпедо, подсветка в ноги",full],
-      ...Object.keys(ZONES).map(z=>[z, zoneLabel(z), ZONES[z].s||(z==="doors"?"Цена за все двери":""), range(zonePrice(z))])];
+    const items = [...Object.keys(ZONES).map(z=>[z, zoneLabel(z), ZONES[z].s||(z==="doors"?"Цена за все двери":""), range(zonePrice(z))])];
     body = `<div class="zones">${items.map(([v,t,sub,p])=>`
-      <label class="zone${v==="full"?" full":""}"><input type="checkbox" value="${v}"${sel.includes(v)?" checked":""}>
+      <label class="zone"><input type="checkbox" value="${v}"${sel.includes(v)?" checked":""}>
         <span class="zt"><b>${t}</b>${sub?`<small>${sub}</small>`:""}</span><span class="zp">${p}</span></label>`).join("")}</div>
       <button class="btn btn-glow znext" id="znext"${sel.length?"":" disabled"}>Дальше</button>`;
   } else if(q.type==="kits"){
-    const pa=lightPrice("autokomp").p, pm=lightPrice("mtf").p, partial=!isFull();
+    const pa=lightPrice("autokomp").p, pm=lightPrice("mtf").p;
     body = `<div class="kits">
       <button class="kit${ans.kit==="autokomp"?" sel":""}" id="kit-autokomp" data-v="autokomp">
         <span class="tag">Оптимально</span>
@@ -446,7 +460,7 @@ function renderQ(){
         <h3>MTF</h3>
         <div class="modes" style="background:linear-gradient(90deg,#ff4d6d,#ffb35c,#ffd24d,#7dff9b,#4dd9ff,#4d7dff,#a24dff,#ff4dd2);border-radius:3px"></div>
         <ul><li>Больше цветов и режимов</li><li>Ровный, яркий свет</li><li>Выше качество и надёжность</li></ul>
-        <div class="price">${pm?(partial?`${range(pm)} <small>+ доплата за MTF</small>`:range(pm)):"Цена индивидуально"}</div>
+        <div class="price">${pm?range(pm):"Цена индивидуально"}</div>
       </button>
     </div>
     <div class="try">Примерьте цвет:
@@ -464,12 +478,20 @@ function renderQ(){
     card.querySelectorAll(".sel").forEach(x=>x.classList.remove("sel")); b.classList.add("sel");
     choose(b.dataset.v);
   }));
-  const boxes = card.querySelectorAll(".zone input");
+  const boxes = card.querySelectorAll(".zone input:not(.wantbox)");
   boxes.forEach(b=>b.addEventListener("change",()=>{
-    if(b.checked) boxes.forEach(o=>{ if(o!==b && (b.value==="full"||o.value==="full")) o.checked=false; });
     ans.zones=[...boxes].filter(x=>x.checked).map(x=>x.value);
     document.getElementById("znext").disabled=!ans.zones.length;
   }));
+  const wb = card.querySelectorAll(".wantbox");
+  wb.forEach(b=>b.addEventListener("change",()=>{
+    /* контурная по зонам и комплекс — взаимоисключающие */
+    if(b.checked && (b.value==="light"||b.value==="complex")) wb.forEach(o=>{ if(o!==b && (o.value==="light"||o.value==="complex")) o.checked=false; });
+    ans.want=[...wb].filter(x=>x.checked).map(x=>x.value);
+    document.getElementById("wnext").disabled=!ans.want.length;
+  }));
+  const wn=document.getElementById("wnext");
+  if(wn) wn.onclick=()=>go(nextIndex(step));
   const zn=document.getElementById("znext");
   if(zn) zn.onclick=()=>go(nextIndex(step));
   const ri=document.getElementById("refin");
@@ -501,17 +523,17 @@ function renderResult(){
   const disc = hasMain ? discountFor(lo) : 0;
   const totalText = hasMain ? range([lo-disc, hi-disc]) : "после осмотра";
   const openText = open.length ? `${hasMain?"+ ":""}${open.join(", ")}: уточним при записи` : "";
-  const tip = extraTip();
-  const showTip = tip && !L.some(l=>l.s===tip);
   const car = `${ans.brand}, ${BODY_NAME[ans.body]}`;
-  const title = ans.want==="all" ? "Комплексное преображение салона" : SERVICE[ans.want].t;
+  const svc = L.filter(l=>!l.fee);
+  const title = svc.length===1 ? svc[0].name.split(" · ")[0] : "Ваш набор для автомобиля";
 
   const message =
 `Здравствуйте! Прошёл квиз LumiTech.
 Авто: ${car}.
-Интересует: ${L.filter(l=>!l.fee).map(l=>l.s==="light"&&!isFull()?`${l.name} (${ans.zones.map(zoneLabel).join(", ").toLowerCase()})`:l.name).join("; ")}.
+Интересует: ${svc.map(l=>l.s==="light"?`${l.name} (${ans.zones.map(zoneLabel).join(", ").toLowerCase()})`:l.s==="under"?`${l.name} (${ans.under})`:l.name).join("; ")}.
 ${hasMain?`Примерная стоимость по квизу: ${range([lo-disc, hi-disc])}${disc?" с учётом скидки":""}${open.length?" (уточнить: "+open.join(", ")+")":""}.`:"Стоимость: хочу узнать индивидуальную цену."}
-Где: ${ans.place.toLowerCase()}${isTravel()&&ans.dist?" ("+ans.dist+")":""}. Когда: ${ans.when.toLowerCase()}.
+Где: ${ans.place.toLowerCase()}${isTravel()&&ans.dist?" ("+ans.dist+")":""}.
+Когда: ${ans.when.toLowerCase()}.
 ${ans.ref?`Посоветовал(а): ${ans.ref}.\n`:""}Промокод: ${code}`;
 
   const btns = [
@@ -533,7 +555,6 @@ ${ans.ref?`Посоветовал(а): ${ans.ref}.\n`:""}Промокод: ${cod
         <div class="row total"><div><b>Итого примерно</b>${openText?`<span>${openText}</span>`:""}</div><div class="sum">${totalText}</div></div>
         <div class="note">Точную цену назовём после осмотра машины: она зависит от модели, года и комплектации. Подсветку можно поставить и по отдельным зонам.</div>
       </div>
-      ${showTip?`<p class="lead">Ещё вы отметили «${Q.find(q=>q.key==="pain").opts.find(o=>o.v===ans.pain).t.toLowerCase()}». С этим поможет <b style="color:var(--text)">${SERVICE[tip].t.toLowerCase()}</b>, можно добавить при записи.</p>`:""}
 
       <div class="ticket">
         <div class="amt">${disc?`−${rub(disc)}<small>на ваш заказ</small>`:`до −${rub(DISCOUNTS[DISCOUNTS.length-1][1])}<small>чем больше заказ, тем больше скидка</small>`}</div>
