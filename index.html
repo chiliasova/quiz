@@ -63,7 +63,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 @media (max-width:560px){.opts.three .opt{flex-direction:row;align-items:center}}
 .opt:hover{border-color:var(--glow);background:rgba(11,13,26,.85)}
 .opt:active{transform:scale(.985)}
-.opt:focus-visible,.brand:focus-visible,.kit:focus-visible,.swatch:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
+.opt:focus-visible,.brand:focus-visible,.kit:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 .opt.sel,.brand.sel,.kit.sel{border-color:var(--glow);box-shadow:inset 0 0 0 1px var(--glow)}
 .opt .ic{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--cabin);border:1px solid var(--line)}
 .opt .ic svg{width:20px;height:20px;stroke:var(--glow);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .5s}
@@ -114,8 +114,6 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .kit .modes{display:flex;gap:5px;height:6px}
 .kit .modes i{flex:1;border-radius:3px}
 
-.try{margin-top:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
-.swatch{width:26px;height:26px;border-radius:50%;border:2px solid var(--cabin);cursor:pointer;padding:0;box-shadow:0 0 10px currentColor}
 
 .nav{display:flex;justify-content:space-between;align-items:center;margin-top:20px;min-height:24px;gap:12px}
 .back{font:inherit;font-size:14px;color:var(--muted);background:none;border:0;cursor:pointer;padding:4px 0}
@@ -237,10 +235,12 @@ const ZONES = {
 };
 
 /* ---------- ЗВЁЗДНОЕ НЕБО ----------
-   Работа по типу кузова, null = обсуждается отдельно. Комплект считается отдельно. */
+   Работа по типу кузова: [от, до]; [от, null] = «от N ₽». Комплект считается отдельно, цена обговаривается. */
 const SKY = {
-  sedan:[15000,25000], hatch:[15000,30000], coupe:[15000,25000],
-  cross:[25000,40000], jeep:[25000,40000], van:null
+  sedan:[20000,20000], hatch3:[20000,20000], coupe:[20000,20000],
+  hatch5:[25000,32000], cross:[25000,32000],
+  jeep:[30000,35000],
+  van:[40000,null]
 };
 
 /* ---------- ВНЕШНЯЯ ПОДСВЕТКА НИЗА МАШИНЫ ---------- */
@@ -291,8 +291,10 @@ const I = {
   eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'
 };
 
-const BODY_NAME = { sedan:"седан", hatch:"хэтчбек", coupe:"купе", cross:"кроссовер / универсал", jeep:"большой внедорожник", van:"минивэн / фургон" };
-const HEAVY = ["jeep","van"];   // большие и тяжёлые машины
+const BODY_NAME = { sedan:"седан", hatch3:"хэтчбек 3 двери", hatch5:"хэтчбек 5 дверей / универсал", coupe:"купе", cross:"кроссовер", jeep:"большой внедорожник", van:"минивэн / фургон / автобус" };
+const HEAVY = ["van"];          // большие и тяжёлые машины: подсветка дороже, комплекс индивидуально
+const CLASS2_BODY = ["jeep"];   // внедорожники считаем по 2 классу независимо от марки
+const TWO_DOOR = ["coupe","hatch3"];
 const KIT_NAME = { autokomp:"АвтоКомпоненты", mtf:"MTF" };
 const wants = v => (ans.want||[]).includes(v);
 const needsLight = () => wants("light") || wants("complex");
@@ -312,11 +314,12 @@ const Q = [
   {key:"body", type:"opts", cls:"three", title:"Какой тип кузова?", hint:"От размера салона зависит объём работы.",
    opts:[
     {v:"sedan", ic:"car", t:"Седан", s:"Rio, Solaris, Vesta"},
-    {v:"hatch", ic:"car", t:"Хэтчбек", s:"Polo, Granta, i30"},
+    {v:"hatch3", ic:"car", t:"Хэтчбек 3 двери", s:"Polo GTI 3d, Mini, Astra GTC"},
+    {v:"hatch5", ic:"car", t:"Хэтчбек 5 дверей / универсал", s:"Polo, Granta, Octavia Combi"},
     {v:"coupe", ic:"car", t:"Купе", s:"Две двери"},
-    {v:"cross", ic:"suv", t:"Кроссовер / универсал", s:"Creta, Tiguan, Forester"},
+    {v:"cross", ic:"suv", t:"Небольшой кроссовер", s:"Creta, Tiguan, Forester"},
     {v:"jeep",  ic:"suv", t:"Большой внедорожник", s:"Land Cruiser, X5, Tank"},
-    {v:"van",   ic:"van", t:"Минивэн / фургон", s:"Carnival, Transporter"}
+    {v:"van",   ic:"van", t:"Минивэн / фургон / автобус", s:"Carnival, Transporter, Sprinter"}
    ]},
   {key:"zones", type:"zones", show:()=>wants("light"), title:"Что подсвечиваем?", hint:"Выберите зоны, можно несколько. Здесь цена работы, комплект подсветки добавится на следующем шаге."},
   {key:"kit", type:"kits", show:needsLight, title:"Какую подсветку ставим?", hint:"Цена посчитана для вашей машины."},
@@ -352,7 +355,7 @@ const card = document.getElementById("card");
 const root = document.documentElement;
 
 /* ===== расчёт ===== */
-const brandClass = () => (BRANDS.find(b=>b[0]===ans.brand)||[,2])[1];
+const brandClass = () => CLASS2_BODY.includes(ans.body) ? 2 : (BRANDS.find(b=>b[0]===ans.brand)||[,2])[1];
 const heavy = () => HEAVY.includes(ans.body);
 const rub = n => n.toLocaleString("ru-RU").replace(/\s/g," ") + " ₽";
 const range = p => p ? (p[0]===p[1] ? rub(p[0]) : `${rub(p[0])} – ${rub(p[1])}`) : "индивидуально";
@@ -360,10 +363,10 @@ const add = (a,b) => [a[0]+b[0], a[1]+b[1]];
 function zonePrice(z){
   const Z = ZONES[z][heavy()?"heavy":"normal"];
   if(z!=="doors") return Z;
-  const coupe = ans.body==="coupe", per = coupe ? Z.coupe : Z.door, n = coupe ? 2 : 4;
+  const coupe = TWO_DOOR.includes(ans.body), per = coupe ? Z.coupe : Z.door, n = coupe ? 2 : 4;
   return [per[0]*n, per[1]*n];
 }
-const zoneLabel = z => z==="doors" ? `Двери (${ans.body==="coupe"?2:4} шт.)` : ZONES[z].t;
+const zoneLabel = z => z==="doors" ? `Двери (${TWO_DOOR.includes(ans.body)?2:4} шт.)` : ZONES[z].t;
 const isFull = () => wants("complex");
 /* экономия комплекса против тех же зон по отдельности (двери, торпеда, ноги, карманы) + комплект */
 const FULL_ZONES = ["doors","torpedo","feet","pockets"];
@@ -398,9 +401,9 @@ function lines(){
     if(s==="light"||s==="complex"){ const kit=ans.kit||"autokomp"; return {s, name:`${SERVICE[s].t} · ${KIT_NAME[kit]}`, ...lightPrice(kit)}; }
     if(s==="under"){ const u=UNDER.find(x=>x[0]===ans.under)||UNDER[0]; return {s, name:SERVICE.under.t, desc:u[0]+".", p:[u[1],u[1]]}; }
     if(s==="teyes") return {s, name:SERVICE.teyes.t, desc:SERVICE.teyes.s, p:[TEYES,TEYES]};
-    if(s==="sky"){ const p=SKY[ans.body];
-      return p ? {s, name:SERVICE.sky.t, p, open:"комплект неба", desc:"Цена работы. Комплект неба считается отдельно: цена зависит от выбранного комплекта."}
-               : {s, name:SERVICE.sky.t, p:null, open:"звёздное небо", desc:"Для минивэнов и фургонов цену обсуждаем отдельно."}; }
+    if(s==="sky"){ const k=SKY[ans.body], from=k[1]===null;
+      return {s, name:SERVICE.sky.t, p:[k[0], from?k[0]:k[1]], from, open:"комплект неба",
+              desc:"Цена работы. Комплект неба считается отдельно, его цену обговорим."}; }
   });
   if(isTravel()){
     const t = TRAVEL.find(x=>x[0]===ans.dist)||[ans.dist,null];
@@ -408,19 +411,6 @@ function lines(){
   }
   return L;
 }
-
-/* ===== цвет подсветки страницы ===== */
-let rgbTimer=null, hue=195;
-function setGlow(c){
-  clearInterval(rgbTimer); rgbTimer=null;
-  if(c==="rgb"){
-    rgbTimer=setInterval(()=>{hue=(hue+2)%360; apply(`hsl(${hue} 95% 68%)`,`hsl(${hue} 95% 68% / .2)`);},60);
-    return;
-  }
-  const n=parseInt(c.slice(1),16);
-  apply(c,`rgba(${n>>16},${(n>>8)&255},${n&255},.2)`);
-}
-function apply(c,soft){ root.style.setProperty("--glow",c); root.style.setProperty("--glow-soft",soft); if(window.sky) sky.tint=c; }
 
 /* ===== навигация ===== */
 const visible = () => Q.filter(q=>!q.show||q.show());
@@ -481,10 +471,6 @@ function renderQ(){
         <ul><li>Больше цветов и режимов</li><li>Ровный, яркий свет</li><li>Выше качество и надёжность</li></ul>
         <div class="price">${pm?range(pm):"Цена индивидуально"}</div>${isFull()&&fullSaving("mtf")?`<span class="save">Экономия до ${rub(fullSaving("mtf"))}</span>`:""}
       </button>
-    </div>
-    <div class="try">Примерьте цвет:
-      ${[["#6fd6ff","Голубой"],["#b28cff","Фиолетовый"],["#ffb35c","Янтарь"],["#ff5c8a","Красный"],["#7dff9b","Зелёный"]].map(([c,n])=>`<button class="swatch" aria-label="${n}" style="background:${c};color:${c}" data-c="${c}"></button>`).join("")}
-      <button class="swatch" aria-label="RGB" style="background:conic-gradient(#ff5c8a,#ffb35c,#7dff9b,#6fd6ff,#b28cff,#ff5c8a);color:#b28cff" data-c="rgb"></button>
     </div>`;
   }
   card.innerHTML = `
@@ -527,7 +513,6 @@ function renderQ(){
     rn.onclick=submit;
     document.getElementById("refself").onclick=()=>{ ans.ref=""; go(nextIndex(step)); };
   }
-  card.querySelectorAll(".swatch").forEach(s=>s.addEventListener("click",()=>setGlow(s.dataset.c)));
   const back=document.getElementById("back");
   if(back) back.onclick=()=>{ step=history.pop(); render(); };
 }
@@ -540,7 +525,9 @@ function renderResult(){
   const hasMain = priced.some(l=>!l.fee);
   const open = L.map(l=>l.open).filter(Boolean);
   const disc = hasMain ? discountFor(lo) : 0;
-  const totalText = hasMain ? range([lo-disc, hi-disc]) : "после осмотра";
+  const fromAny = priced.some(l=>l.from);
+  const tot = p => fromAny ? "от "+rub(p[0]) : range(p);
+  const totalText = hasMain ? tot([lo-disc, hi-disc]) : "после осмотра";
   const openText = open.length ? `${hasMain?"+ ":""}${open.join(", ")}: уточним при записи` : "";
   const car = `${ans.brand}, ${BODY_NAME[ans.body]}`;
   const svc = L.filter(l=>!l.fee);
@@ -550,7 +537,7 @@ function renderResult(){
 `Здравствуйте! Прошёл квиз LumiTech.
 Авто: ${car}.
 Интересует: ${svc.map(l=>l.s==="light"?`${l.name} (${ans.zones.map(zoneLabel).join(", ").toLowerCase()})`:l.s==="under"?`${l.name} (${ans.under})`:l.name).join("; ")}.
-${hasMain?`Примерная стоимость по квизу: ${range([lo-disc, hi-disc])}${disc?" с учётом скидки":""}${open.length?" (уточнить: "+open.join(", ")+")":""}.`:"Стоимость: хочу узнать индивидуальную цену."}
+${hasMain?`Примерная стоимость по квизу: ${tot([lo-disc, hi-disc])}${disc?" с учётом скидки":""}${open.length?" (уточнить: "+open.join(", ")+")":""}.`:"Стоимость: хочу узнать индивидуальную цену."}
 Где: ${ans.place.toLowerCase()}${isTravel()&&ans.dist?" ("+ans.dist+")":""}.
 Когда: ${ans.when.toLowerCase()}.
 ${ans.ref?`Посоветовал(а): ${ans.ref}.\n`:""}Промокод: ${code}`;
@@ -569,7 +556,7 @@ ${ans.ref?`Посоветовал(а): ${ans.ref}.\n`:""}Промокод: ${cod
       <p class="lead">Примерный расчёт для ${car}:</p>
 
       <div class="est">
-        ${L.map(l=>`<div class="row"><div><b>${l.name}</b><span>${l.desc}</span></div><div class="sum">${l.p?range(l.p):(l.fee?"обсудим":"индивидуально")}</div></div>`).join("")}
+        ${L.map(l=>`<div class="row"><div><b>${l.name}</b><span>${l.desc}</span></div><div class="sum">${l.p?(l.from?"от "+rub(l.p[0]):range(l.p)):(l.fee?"обсудим":"индивидуально")}</div></div>`).join("")}
         <div class="row minus"><div><b>Скидка за квиз</b><span>${disc?`по промокоду ${code}`:`действует при заказе от ${rub(DISCOUNT_FROM)}`}</span></div><div class="sum">${disc?"−"+rub(disc):"—"}</div></div>
         <div class="row total"><div><b>Итого примерно</b>${openText?`<span>${openText}</span>`:""}</div><div class="sum">${totalText}</div></div>
         <div class="note">Точную цену назовём после осмотра машины: она зависит от модели, года и комплектации. Подсветку можно поставить и по отдельным зонам.</div>
