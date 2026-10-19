@@ -93,6 +93,10 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .zone:hover{border-color:var(--glow)}
 .zone:has(input:checked){border-color:var(--glow);box-shadow:inset 0 0 0 1px var(--glow)}
 .zone.full{margin-bottom:6px}
+.zone.best{border-color:var(--gift);background:linear-gradient(135deg,rgba(255,207,107,.14),rgba(11,13,26,.55) 60%)}
+.zone.best:has(input:checked){border-color:var(--gift);box-shadow:inset 0 0 0 1px var(--gift)}
+.save{display:inline-block;margin-top:6px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--night);background:var(--gift);padding:3px 9px;border-radius:999px}
+.kit .save{align-self:flex-start;margin-top:4px}
 .zone input{width:18px;height:18px;accent-color:var(--glow);flex:none;margin:0}
 .zone .zt{flex:1;min-width:0}
 .zone .ic{flex:none}
@@ -361,12 +365,27 @@ function zonePrice(z){
 }
 const zoneLabel = z => z==="doors" ? `Двери (${ans.body==="coupe"?2:4} шт.)` : ZONES[z].t;
 const isFull = () => wants("complex");
+/* экономия комплекса против тех же зон по отдельности (двери, торпеда, ноги, карманы) + комплект */
+const FULL_ZONES = ["doors","torpedo","feet","pockets"];
+function fullSaving(kit){
+  if(heavy()) return 0;
+  const zones = FULL_ZONES.map(zonePrice).reduce(add,[0,0]);
+  const base = LIGHT[brandClass()]||LIGHT[2], cp = kit==="mtf" ? add(base,MTF_ADD) : base;
+  return Math.max(0, zones[1] + KIT_COST[kit] - cp[0]);
+}
+/* максимальная экономия для плашки на шаге выбора: седан, лучший класс */
+function maxFullSaving(){
+  const Z = k => ZONES[k].normal, zones = 4*Z("doors").door[1] + Z("torpedo")[1] + Z("feet")[1] + Z("pockets")[1];
+  const minFull = Math.min(...Object.values(LIGHT).map(x=>x[0]));
+  return zones + KIT_COST.autokomp - minFull;
+}
 /* цена подсветки АвтоКомпоненты или MTF; open — что уточняется отдельно */
 function lightPrice(kit){
   if(isFull()){
     if(heavy()) return {p:null, open:"подсветка", desc:"Комплекс для больших машин считаем индивидуально."};
     const base = LIGHT[brandClass()]||LIGHT[2];
-    return {p: kit==="mtf" ? add(base,MTF_ADD) : base, desc:"Подсветка всего салона: двери, ноги, карманы дверей и торпеда."};
+    const sv = fullSaving(kit);
+    return {p: kit==="mtf" ? add(base,MTF_ADD) : base, desc:"Подсветка всего салона: двери, ноги, карманы дверей и торпеда." + (sv?` Выгоднее, чем те же зоны по отдельности: экономия до ${rub(sv)}.`:"")};
   }
   const work = ans.zones.map(zonePrice).reduce(add,[0,0]);
   const p = add(work,[KIT_COST[kit],KIT_COST[kit]]);
@@ -435,8 +454,8 @@ function renderQ(){
   } else if(q.type==="multi"){
     const sel = ans.want||[];
     body = `<div class="zones">${q.opts.map(o=>`
-      <label class="zone"><input type="checkbox" class="wantbox" value="${o.v}"${sel.includes(o.v)?" checked":""}>
-        <span class="zt"><b>${o.t}</b><small>${o.s}</small></span></label>`).join("")}</div>
+      <label class="zone${o.v==="complex"?" best":""}"><input type="checkbox" class="wantbox" value="${o.v}"${sel.includes(o.v)?" checked":""}>
+        <span class="zt"><b>${o.t}</b><small>${o.s}</small>${o.v==="complex"?`<span class="save">Выгоднее · экономия до ${rub(maxFullSaving())}</span>`:""}</span></label>`).join("")}</div>
       <button class="btn btn-glow znext" id="wnext"${sel.length?"":" disabled"}>Дальше</button>`;
   } else if(q.type==="zones"){
     const sel = ans.zones||[];
@@ -453,14 +472,14 @@ function renderQ(){
         <h3>АвтоКомпоненты</h3>
         <div class="modes"><i style="background:#ff4d6d"></i><i style="background:#4dff88"></i><i style="background:#4d9dff"></i><i style="background:#ffd24d"></i><i style="background:#c04dff"></i></div>
         <ul><li>Простая RGB-подсветка</li><li>Несколько цветов и режимов</li><li>Хороший старт за разумные деньги</li></ul>
-        <div class="price">${pa?range(pa):"Цена индивидуально"}</div>
+        <div class="price">${pa?range(pa):"Цена индивидуально"}</div>${isFull()&&fullSaving("autokomp")?`<span class="save">Экономия до ${rub(fullSaving("autokomp"))}</span>`:""}
       </button>
       <button class="kit pro${ans.kit==="mtf"?" sel":""}" id="kit-mtf" data-v="mtf">
         <span class="tag">Премиум</span>
         <h3>MTF</h3>
         <div class="modes" style="background:linear-gradient(90deg,#ff4d6d,#ffb35c,#ffd24d,#7dff9b,#4dd9ff,#4d7dff,#a24dff,#ff4dd2);border-radius:3px"></div>
         <ul><li>Больше цветов и режимов</li><li>Ровный, яркий свет</li><li>Выше качество и надёжность</li></ul>
-        <div class="price">${pm?range(pm):"Цена индивидуально"}</div>
+        <div class="price">${pm?range(pm):"Цена индивидуально"}</div>${isFull()&&fullSaving("mtf")?`<span class="save">Экономия до ${rub(fullSaving("mtf"))}</span>`:""}
       </button>
     </div>
     <div class="try">Примерьте цвет:
