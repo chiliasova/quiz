@@ -152,9 +152,15 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .btn-gift{background:var(--gift);color:var(--night)}
 .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
 .cta .btn{flex:1 1 200px}
-.msg{margin-top:22px;display:grid;gap:8px}
-.msg label{font-size:13px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-.msg textarea{width:100%;min-height:150px;resize:vertical;font:inherit;font-size:14px;color:var(--text);background:var(--night);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.msg{margin-top:26px;display:grid;gap:12px;padding:22px;border-radius:18px;border:2px solid var(--glow);background:linear-gradient(180deg,var(--glow-soft),rgba(11,13,26,0) 75%);box-shadow:0 0 30px -6px var(--glow);transition:border-color .5s,box-shadow .5s}
+.msg-h{display:flex;align-items:center;gap:12px}
+.msg-h .num{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--glow);color:var(--night);font-family:var(--f-display);font-weight:800;font-size:17px;box-shadow:0 0 14px var(--glow)}
+.msg-h b{display:block;font-family:var(--f-display);font-size:clamp(17px,4.6vw,20px);line-height:1.2}
+.msg-h small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.msg-h.two{margin-top:8px}
+.msg textarea{width:100%;min-height:210px;resize:vertical;font:inherit;font-size:15px;line-height:1.45;color:var(--text);background:var(--night);border:1px solid var(--glow);border-radius:12px;padding:14px 16px}
+.msg .msg-copy{width:100%;font-size:17px;padding:16px 20px}
+.msg .cta{margin-top:0}
 .msg textarea:focus{outline:2px solid var(--glow);outline-offset:1px}
 .toast{font-size:13px;color:var(--glow);min-height:20px}
 .restart{margin-top:16px}
@@ -197,6 +203,9 @@ const LINKS = {
   vk: "https://vk.ru/ww_lumitech",
   avito: ""
 };
+/* Куда сохранять ответы: ссылка веб-приложения Google Apps Script (таблица «Заявки с квиза LumiTech»).
+   Пусто — ничего не отправляется. */
+const LEADS_URL = "https://script.google.com/macros/s/AKfycbwEM5oKkg6kquDxSX4yvh61D7Mt2Lwcv9o9_8J0y_EAjM_CdNGORy3smX3OXqgK09HGGA/exec";
 const PROMO = "LUMITECH";   // промокод, если имя не из списка или клиент пришёл сам
 /* Кто посоветовал → свой промокод. Имя пишется как угодно: регистр и ё/е не важны. */
 const REFERRALS = {
@@ -517,6 +526,18 @@ function renderQ(){
   if(back) back.onclick=()=>{ step=history.pop(); render(); };
 }
 
+/* ===== сохранение ответов в таблицу ===== */
+const newRun = () => Date.now().toString(36).slice(-5) + Math.random().toString(36).slice(2,5);
+let runId = newRun(), runSent = false;
+function track(action, data){
+  if(!LEADS_URL) return;
+  try{
+    fetch(LEADS_URL, {method:"POST", mode:"no-cors", keepalive:true,
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({...data, action, id:runId})}).catch(()=>{});
+  }catch(e){}
+}
+
 function renderResult(){
   const L = lines();
   const code = promo();
@@ -569,15 +590,28 @@ ${ans.ref?`Посоветовал(а): ${ans.ref}.\n`:""}Промокод: ${cod
       </div>
 
       <div class="msg">
-        <label for="msgText">Готовое сообщение для записи</label>
-        <textarea id="msgText" readonly>${message.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</textarea>
-        <div class="cta" style="margin-top:4px"><button class="btn btn-ghost" id="copyMsg">Скопировать сообщение</button></div>
+        <div class="msg-h"><span class="num">1</span><div><b>Скопируйте готовое сообщение</b><small>В нём уже ваша машина, услуги, цена и промокод</small></div></div>
+        <textarea id="msgText" readonly aria-label="Готовое сообщение для записи">${message.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</textarea>
+        <button class="btn btn-glow msg-copy" id="copyMsg">Скопировать сообщение</button>
         <div class="toast" id="toast"></div>
+        <div class="msg-h two"><span class="num">2</span><div><b>Отправьте его нам</b><small>Вставьте сообщение в чат, и мы ответим и запишем вас</small></div></div>
+        <div class="cta">${btns}</div>
       </div>
-
-      <div class="cta">${btns}</div>
       <button class="back restart" id="restart">↺ Пройти заново</button>
     </div>`;
+
+  const lead = {
+    ref: ans.ref||"", promo: code, brand: ans.brand, body: BODY_NAME[ans.body],
+    services: svc.map(l=>l.name.split(" · ")[0]).join(", "),
+    zones: wants("light") ? (ans.zones||[]).map(zoneLabel).join(", ") : "",
+    kit: needsLight() ? KIT_NAME[ans.kit||"autokomp"] : "",
+    under: wants("under") ? ans.under : "",
+    place: ans.place, dist: isTravel() ? (ans.dist||"") : "", when: ans.when,
+    lo: hasMain ? lo : "", hi: hasMain ? hi : "", disc,
+    total: totalText, open: open.join(", ")
+  };
+  if(!runSent){ runSent = true; track("Прошёл квиз", lead); }
+  card.querySelectorAll(".msg .cta a").forEach(a=>a.addEventListener("click",()=>track("Нажал «"+a.textContent.trim()+"»", lead)));
 
   const toast=document.getElementById("toast");
   function copy(text, el, okText){
@@ -585,8 +619,8 @@ ${ans.ref?`Посоветовал(а): ${ans.ref}.\n`:""}Промокод: ${cod
     try{ navigator.clipboard.writeText(text).then(()=>{toast.textContent=okText;},fallback); }catch(e){ fallback(); }
   }
   document.getElementById("copyCode").onclick=()=>copy(code,document.getElementById("promo"),"Промокод скопирован");
-  document.getElementById("copyMsg").onclick=()=>copy(message,document.getElementById("msgText"),"Сообщение скопировано, отправьте его нам");
-  document.getElementById("restart").onclick=()=>{ for(const k in ans) delete ans[k]; history=[]; step=0; render(); };
+  document.getElementById("copyMsg").onclick=()=>{ track("Скопировал сообщение", lead); copy(message,document.getElementById("msgText"),"Сообщение скопировано, отправьте его нам"); };
+  document.getElementById("restart").onclick=()=>{ for(const k in ans) delete ans[k]; history=[]; step=0; runId=newRun(); runSent=false; render(); };
 }
 
 /* ===== звёздное небо ===== */
