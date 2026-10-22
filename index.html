@@ -110,6 +110,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .refin.bad{border-color:#ff6b81;box-shadow:inset 0 0 0 1px #ff6b81}
 .referr{color:#ff8fa0;font-size:14px;margin-top:8px;min-height:0}
 .referr:empty{display:none}
+.friend{margin-top:12px}
+.friend[hidden]{display:none}
 .znext:disabled{opacity:.4;cursor:default}
 .kit .modes{display:flex;gap:5px;height:6px}
 .kit .modes i{flex:1;border-radius:3px}
@@ -212,6 +214,14 @@ const REFERRALS = {
   "Андрей": "НЕБО",
   "Никита": "СВЕТ"
 };
+/* Откуда клиент о нас узнал (шаг 2). friend — «От знакомого»: клиент пишет имя, имя проверяется по REFERRALS. */
+const SOURCES = [
+  {t:"ВК сообщество",  ic:"chat"},
+  {t:"Инстаграм",      ic:"cam"},
+  {t:"Телеграм канал", ic:"send"},
+  {t:"От знакомого",   ic:"user", s:"Напишите имя того, кто посоветовал", friend:true}
+];
+const FRIEND = SOURCES.find(x=>x.friend).t;
 const norm = t => (t||"").trim().toLowerCase().replace(/ё/g,"е");
 const knownRef = t => Object.keys(REFERRALS).some(n=>norm(n)===norm(t));
 const promo = () => { const k = Object.keys(REFERRALS).find(n=>norm(n)===norm(ans.ref)); return k ? REFERRALS[k] : PROMO; };
@@ -282,6 +292,10 @@ const BRANDS = [
 /* ================================================================ */
 
 const I = {
+  chat:'<path d="M4 5h16v11H9l-5 4z"/>',
+  cam:'<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8"/>',
+  send:'<path d="M21 3L3 11l7 2 2 7z"/><path d="M10 13l11-10"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
   line:'<path d="M3 17c4-8 14-8 18 0"/><path d="M3 13c4-6 14-6 18 0" opacity=".5"/>',
   star:'<path d="M12 3l2.2 5.6L20 9.3l-4.4 3.9 1.3 5.8L12 16l-4.9 3 1.3-5.8L4 9.3l5.8-.7z"/>',
   mute:'<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l4 6M21 9l-4 6"/>',
@@ -310,7 +324,8 @@ const needsLight = () => wants("light") || wants("complex");
 const isTravel = () => ans.place==="С выездом ко мне";
 
 const Q = [
-  {key:"ref", type:"ref", title:"Кто вам посоветовал LumiTech?", hint:"Напишите имя человека, от которого вы о нас узнали. От этого зависит ваш промокод."},
+  {key:"name", type:"name", title:"Как вас зовут?", hint:"Чтобы мы знали, как к вам обращаться."},
+  {key:"ref", type:"ref", title:"Откуда вы о нас узнали?", hint:"Если LumiTech посоветовал знакомый, выберите «От знакомого» и впишите его имя: так вы получите его промокод."},
   {key:"want", type:"multi", title:"Что хочется сделать?", hint:"Можно выбрать несколько вариантов.",
    opts:[
     {v:"light",   ic:"line", t:"Контурная подсветка", s:"Сами выбираете: подсветка дверей, ног, карманов дверей, торпеды"},
@@ -445,11 +460,22 @@ function renderQ(){
   } else if(q.type==="brands"){
     body = `<div class="brands">${BRANDS.map(([n],i)=>`
       <button class="brand${n==="Другая марка"?" other":""}${ans.brand===n?" sel":""}" id="brand-${i}" data-v="${n}">${n}</button>`).join("")}</div>`;
+  } else if(q.type==="name"){
+    body = `<input class="refin" id="namein" type="text" autocomplete="given-name" maxlength="40" placeholder="Ваше имя" value="${(ans.name||"").replace(/"/g,"&quot;")}">
+      <div class="referr" id="nameerr" role="alert"></div>
+      <button class="btn btn-glow znext" id="namenext"${ans.name?"":" disabled"}>Дальше</button>`;
   } else if(q.type==="ref"){
-    body = `<input class="refin" id="refin" type="text" autocomplete="off" maxlength="40" placeholder="Например, Андрей" value="${(ans.ref||"").replace(/"/g,"&quot;")}">
-      <div class="referr" id="referr" role="alert"></div>
-      <button class="btn btn-glow znext" id="refnext"${ans.ref?"":" disabled"}>Дальше</button>
-      <button class="back refself" id="refself">Никто, нашёл сам</button>`;
+    const fr = ans.source===FRIEND;
+    body = `<div class="opts">${SOURCES.map(o=>`
+      <button class="opt src${ans.source===o.t?' sel':''}" data-src="${o.t}">
+        ${icon(o.ic)}<span><b>${o.t}</b>${o.s?`<small>${o.s}</small>`:""}</span>
+      </button>`).join("")}</div>
+      <div class="friend" id="friend"${fr?"":" hidden"}>
+        <input class="refin" id="refin" type="text" autocomplete="off" maxlength="40" placeholder="Имя того, кто посоветовал" value="${(fr?ans.ref||"":"").replace(/"/g,"&quot;")}">
+        <div class="referr" id="referr" role="alert"></div>
+        <button class="btn btn-glow znext" id="refnext"${fr&&ans.ref?"":" disabled"}>Дальше</button>
+      </div>
+      <button class="back refself" id="refself">Другое</button>`;
   } else if(q.type==="multi"){
     const sel = ans.want||[];
     body = `<div class="zones">${q.opts.map(o=>`
@@ -488,7 +514,7 @@ function renderQ(){
     <div class="nav">${history.length?'<button class="back" id="back">← Назад</button>':'<span></span>'}<span class="step">Скидка ждёт в конце</span></div>`;
   requestAnimationFrame(()=>{ const b=card.querySelector(".bar i"); if(b) b.style.width=((pos-.5)/vis.length*100)+"%"; });
 
-  card.querySelectorAll(".opt,.brand,.kit").forEach(b=>b.addEventListener("click",()=>{
+  card.querySelectorAll(".opt[data-v],.brand,.kit").forEach(b=>b.addEventListener("click",()=>{
     card.querySelectorAll(".sel").forEach(x=>x.classList.remove("sel")); b.classList.add("sel");
     choose(b.dataset.v);
   }));
@@ -508,19 +534,38 @@ function renderQ(){
   if(wn) wn.onclick=()=>go(nextIndex(step));
   const zn=document.getElementById("znext");
   if(zn) zn.onclick=()=>go(nextIndex(step));
+  const ni=document.getElementById("namein");
+  if(ni){
+    const nn=document.getElementById("namenext"), er=document.getElementById("nameerr");
+    const submit=()=>{
+      if(!ans.name) return;
+      if(!/^[A-Za-zА-Яа-яЁё][A-Za-zА-Яа-яЁё \-]*[A-Za-zА-Яа-яЁё]$/.test(ans.name)){ er.textContent="Напишите имя буквами, например, Анна."; ni.classList.add("bad"); ni.focus(); return; }
+      go(nextIndex(step));
+    };
+    ni.addEventListener("input",()=>{ ans.name=ni.value.trim().replace(/\s+/g," "); nn.disabled=!ans.name; er.textContent=""; ni.classList.remove("bad"); });
+    ni.addEventListener("keydown",e=>{ if(e.key==="Enter") submit(); });
+    nn.onclick=submit;
+  }
   const ri=document.getElementById("refin");
   if(ri){
     const rn=document.getElementById("refnext");
     const er=document.getElementById("referr");
+    const fb=document.getElementById("friend");
+    card.querySelectorAll(".opt.src").forEach(b=>b.addEventListener("click",()=>{
+      card.querySelectorAll(".opt.src").forEach(x=>x.classList.toggle("sel",x===b));
+      ans.source=b.dataset.src;
+      if(ans.source===FRIEND){ ans.ref=ri.value.trim(); fb.hidden=false; rn.disabled=!ans.ref; ri.focus(); return; }
+      ans.ref=""; fb.hidden=true; go(nextIndex(step));
+    }));
     const submit=()=>{
       if(!ans.ref) return;
-      if(!knownRef(ans.ref)){ er.textContent="Такого имени нет в списке. Проверьте, как оно написано, или нажмите «Никто, нашёл сам»."; ri.classList.add("bad"); ri.focus(); return; }
+      if(!knownRef(ans.ref)){ er.textContent="Такого имени нет в списке. Проверьте, как оно написано, или выберите другой вариант."; ri.classList.add("bad"); ri.focus(); return; }
       go(nextIndex(step));
     };
     ri.addEventListener("input",()=>{ ans.ref=ri.value.trim(); rn.disabled=!ans.ref; er.textContent=""; ri.classList.remove("bad"); });
     ri.addEventListener("keydown",e=>{ if(e.key==="Enter") submit(); });
     rn.onclick=submit;
-    document.getElementById("refself").onclick=()=>{ ans.ref=""; go(nextIndex(step)); };
+    document.getElementById("refself").onclick=()=>{ ans.source="Другое"; ans.ref=""; go(nextIndex(step)); };
   }
   const back=document.getElementById("back");
   if(back) back.onclick=()=>{ step=history.pop(); render(); };
@@ -555,13 +600,13 @@ function renderResult(){
   const title = svc.length===1 ? svc[0].name.split(" · ")[0] : "Ваш набор для автомобиля";
 
   const message =
-`Здравствуйте! Прошёл квиз LumiTech.
+`Здравствуйте! Меня зовут ${ans.name}, я прошёл(ла) квиз LumiTech.
 Авто: ${car}.
 Интересует: ${svc.map(l=>l.s==="light"?`${l.name} (${ans.zones.map(zoneLabel).join(", ").toLowerCase()})`:l.s==="under"?`${l.name} (${ans.under})`:l.name).join("; ")}.
 ${hasMain?`Примерная стоимость по квизу: ${tot([lo-disc, hi-disc])}${disc?" с учётом скидки":""}${open.length?" (уточнить: "+open.join(", ")+")":""}.`:"Стоимость: хочу узнать индивидуальную цену."}
 Где: ${ans.place.toLowerCase()}${isTravel()&&ans.dist?" ("+ans.dist+")":""}.
 Когда: ${ans.when.toLowerCase()}.
-${ans.ref?`Посоветовал(а): ${ans.ref}.\n`:""}Промокод: ${code}`;
+${ans.ref?`Посоветовал(а): ${ans.ref}.\n`:ans.source&&ans.source!=="Другое"?`Узнал(а) о вас: ${ans.source}.\n`:""}Промокод: ${code}`;
 
   const btns = [
     LINKS.telegram && `<a class="btn btn-glow" href="${LINKS.telegram}" target="_blank" rel="noopener">Написать в Telegram</a>`,
@@ -601,7 +646,7 @@ ${ans.ref?`Посоветовал(а): ${ans.ref}.\n`:""}Промокод: ${cod
     </div>`;
 
   const lead = {
-    ref: ans.ref||"", promo: code, brand: ans.brand, body: BODY_NAME[ans.body],
+    name: ans.name||"", source: ans.source||"", ref: ans.ref||"", promo: code, brand: ans.brand, body: BODY_NAME[ans.body],
     services: svc.map(l=>l.name.split(" · ")[0]).join(", "),
     zones: wants("light") ? (ans.zones||[]).map(zoneLabel).join(", ") : "",
     kit: needsLight() ? KIT_NAME[ans.kit||"autokomp"] : "",
